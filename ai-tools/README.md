@@ -279,3 +279,27 @@ npx skills add rebelytics/one-skill-to-rule-them-all --skill task-observer -g -a
 - claude-mem: https://github.com/thedotmack/claude-mem
 - Headroom: https://github.com/chopratejas/headroom
 - task-observer: https://github.com/rebelytics/one-skill-to-rule-them-all
+
+---
+
+## 6. Taste Skill (تصميم واجهات غير مملّة)
+
+**الفكرة ببساطة:** مهارة من مشروع [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill) تجعل Claude Code يصمم صفحات ويب وواجهات بذوق عالٍ (خطوط، ألوان، حركة، مسافات) بدل القوالب المتكررة. مناسبة لصفحات الهبوط والمواقع الشخصية وإعادة التصميم.
+
+### التثبيت
+
+```bash
+npx skills add https://github.com/Leonxlnx/taste-skill --skill design-taste-frontend -g -a claude-code -y
+```
+
+### التحقق
+
+```bash
+ls ~/.claude/skills/design-taste-frontend/SKILL.md
+```
+
+### الاستخدام
+
+لا تحتاج تفعيلاً. تعمل تلقائياً عندما تطلب من Claude Code تصميم صفحة أو واجهة. لتأكيد استخدامها اكتب في طلبك: `use the design-taste-frontend skill`.
+
+مهارات أخرى في نفس المستودع تُثبَّت بنفس الأمر مع تغيير الاسم بعد `--skill`: `minimalist-ui`، `industrial-brutalist-ui`، `redesign-existing-projects`، `image-to-code`.
