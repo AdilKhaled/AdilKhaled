@@ -718,6 +718,7 @@ body.arep-on{overflow:hidden}
 .ar-ai{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.8}
 .ar-ai.wait{display:flex;align-items:center;gap:10px;background:#F6F1E8;color:#6B6155}
 .ar-ai.wait i{width:16px;height:16px;border-radius:50%;border:2px solid #E1D6C5;border-top-color:#C9A055;animation:arspin 1s linear infinite}
+.ar-ai.wait .ai-sec{font-style:normal;color:#9C8E7A;font-variant-numeric:tabular-nums;margin-inline-start:4px}
 @keyframes arspin{to{transform:rotate(360deg)}}
 .ar-ai.off{background:#F6F1E8;color:#6B6155;display:flex;flex-direction:column;align-items:flex-start}
 .ar-ai.off b{color:#221E1A}
@@ -3852,6 +3853,58 @@ function bindNoteCards(){
 /* ═══════════ التقارير ═══════════ */
 // فلتر واحد (الموظف · الفترة · المشروع) وبعدين تختار: تقرير الأرقام أو التقرير التحليلي
 let RF = {agent:'', period:'', project:''};
+/* ═══════════ طلبات المساعد الذكي: ذاكرة دائمة + منع التكرار + عدّاد انتظار ═══════════
+   التحليل نفسه يصير بدالة ai-report / ai-coach بالسيرفر وياخذ وقته — اللي بإيدنا هنا:
+   · نفس الأرقام = نفس القراءة: نحفظ الجواب بالجهاز (localStorage) ومفتاحه بصمة البيانات المرسلة،
+     فإعادة فتح التقرير (حتى بعد تحديث الصفحة) ترجع فوراً بلا انتظار ولا استهلاك من حصة المساعد اليومية.
+   · الطلب الشغّال ما يتكرر: غلق التقرير وفتحه من جديد يكمل على نفس الطلب الجاري بدل ما يرسل ثاني.
+   · عدّاد ثواني جنب «يقرأ الأرقام…» حتى المستخدم يعرف إن الطلب ماشي. */
+const AI_STORE_KEY='sanad-ai-cache', AI_STORE_MAX=40, AI_STORE_TTL=7*864e5;
+function aiHash(s){ let h=0x811c9dc5; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193); } return (h>>>0).toString(36); }
+function aiStoreAll(){ try{ const j=JSON.parse(localStorage.getItem(AI_STORE_KEY)||'{}'); return j&&typeof j==='object'?j:{}; }catch(e){ return {}; } }
+function aiStoreGet(h){ const e=aiStoreAll()[h]; if(!e||!e.j) return null; if(Date.now()-(e.t||0)>AI_STORE_TTL) return null; return e.j; }
+function aiStorePut(h, j){
+  try{
+    const all=aiStoreAll(); all[h]={ t:Date.now(), j };
+    Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0)).slice(AI_STORE_MAX).forEach(k=>delete all[k]);
+    localStorage.setItem(AI_STORE_KEY, JSON.stringify(all));
+  }catch(e){ try{ localStorage.removeItem(AI_STORE_KEY); }catch(_){} }
+}
+const aiKeyOf = (fn, body) => fn+':'+aiHash(JSON.stringify(body));
+// جواب محفوظ لنفس الطلب؟ (حتى نرسم التقرير كامل من أول لحظة بلا «يقرأ…»)
+const aiPeek = (fn, body) => aiStoreGet(aiKeyOf(fn, body));
+const AI_INFLIGHT={}, AI_WAIT_SINCE={};
+// طلب للمساعد: {fn:'ai-report', body:{…}, key, timeout, fresh} — يرجّع {status, ok, j, err, h, cached}
+async function aiCall(o){
+  const bodyStr=JSON.stringify(o.body), h=o.fn+':'+aiHash(bodyStr);
+  if(!o.fresh){ const j0=aiStoreGet(h); if(j0) return { status:200, ok:true, j:j0, h, cached:true }; }
+  if(AI_INFLIGHT[h]) return AI_INFLIGHT[h];
+  const wk=o.key||h; AI_WAIT_SINCE[wk]=Date.now();
+  const p=(async()=>{
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(), o.timeout||90000);
+      let r;
+      try{ r=await fetch(`${SUPABASE_URL}/functions/v1/${o.fn}`, { method:'POST', signal:ctl.signal,
+        headers:{ 'Content-Type':'application/json', apikey:SUPABASE_ANON, Authorization:'Bearer '+(session?.access_token||'') }, body:bodyStr }); }
+      finally{ clearTimeout(tm); }
+      let j=null; try{ j=await r.json(); }catch(e){}
+      return { status:r.status, ok:r.ok, j, h, cached:false };
+    }catch(e){ return { status:0, ok:false, j:null, err:e||new Error('شبكة'), h, cached:false }; }
+    finally{ delete AI_INFLIGHT[h]; delete AI_WAIT_SINCE[wk]; }
+  })();
+  AI_INFLIGHT[h]=p; return p;
+}
+const aiNetWhy = (e, long) => e&&e.name==='AbortError' ? (long||'المساعد طوّل أكثر من دقيقة ونص — جرّب مرة ثانية') : 'ما وصل الطلب للدالة ('+((e&&e.message)||'شبكة')+')';
+// عدّاد الثواني جنب مؤشر الانتظار: <em data-aiwait="مفتاح"></em> — يشتغل ما دام أكو مؤشر بالصفحة
+let AI_WAIT_T=null;
+function aiWaitTick(){
+  const els=document.querySelectorAll('[data-aiwait]');
+  if(!els.length){ if(AI_WAIT_T){ clearInterval(AI_WAIT_T); AI_WAIT_T=null; } return; }
+  els.forEach(el=>{ const t0=AI_WAIT_SINCE[el.dataset.aiwait]; el.textContent=t0?' '+Math.max(0,Math.round((Date.now()-t0)/1000))+' ث':''; });
+  if(!AI_WAIT_T) AI_WAIT_T=setInterval(aiWaitTick, 1000);
+}
+const aiWaitHTML = key => `<em class="ai-sec" data-aiwait="${esc(key)}"></em>`;
 const AREP_CACHE = {};
 const AR_C = {ink:'#221E1A', gold:'#C9A055', goldD:'#9C7A36', terra:'#AE5433', green:'#2F7D5B',
   coral:'#B8353E', mute:'#8A7F70', line:'#E1D6C5', soft:'#F6F1E8', blue:'#3E6A8A', sand:'#E9DCC3'};
@@ -4376,7 +4429,7 @@ const teamH = R => Math.max(150, Math.min(14, R.teamAll.length)*34 + 60);
 
 function arAI(R, ai, state, part, extra){
   if(state==='ok' && ai) return extra(ai);
-  if(state==='loading') return part!=='summary' ? '' : `<div class="ar-ai wait"><i></i><span>المساعد الذكي يقرأ الأرقام…</span></div>`;
+  if(state==='loading') return part!=='summary' ? '' : `<div class="ar-ai wait"><i></i><span>المساعد الذكي يقرأ الأرقام…${aiWaitHTML(repKey(R))}</span></div>`;
   if(part!=='summary') return '';
   return `<div class="ar-ai off"><b>القراءة الذكية ما وصلت هسه</b>
     <span>${state==='missing'?'ميزة التحليل الذكي تحتاج تفعيل (دالة ai-report) — ':'ما قدرنا نوصل للمساعد — '}كل الأرقام والرسوم والقراءة بهذا التقرير محسوبة من النظام مباشرة.</span>
@@ -4568,13 +4621,14 @@ function paintARep(keepScroll){
   $('#ar-pdf').onclick=()=>arepPDF();
   $('#ar-print').onclick=()=>arepPrint();
   const rt=$('#ar-retry'); if(rt) rt.onclick=()=>{ AREP.state='loading'; paintARep(true); fetchARepAI(AREP.R); };
+  aiWaitTick();
 }
 async function openARep(f){
   if(!isStaff()) return toast('التقارير للإدارة بس','bad');
   const R = buildReport(f);
   let ov=$('#arep');
   if(!ov){ ov=document.createElement('div'); ov.id='arep'; ov.className='arep'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','التقرير التحليلي'); document.body.appendChild(ov); }
-  const cached = AREP_CACHE[repKey(R)];
+  const cached = AREP_CACHE[repKey(R)] || aiPeek('ai-report', { report: aiPayload(R) });   // نفس الأرقام؟ القراءة جاهزة فوراً
   AREP = { R, ai:cached||null, state:cached?'ok':'loading', charts:[], logo:'' };
   try{ AREP.logo = await logoDataURL(); }catch(e){}
   paintARep();
@@ -4624,20 +4678,15 @@ function aiPayload(R){
 async function fetchARepAI(R){
   const key = repKey(R);
   const done = (state, ai, why) => { if(AREP && repKey(AREP.R)===key){ AREP.state=state; AREP.ai=ai||null; AREP.why=why||''; paintARep(true); } };
-  try{
-    const { data:{ session } } = await sb.auth.getSession();
-    const ctl = new AbortController(), tm = setTimeout(()=>ctl.abort(), 90000);
-    const r = await fetch(`${SUPABASE_URL}/functions/v1/ai-report`, { method:'POST', signal:ctl.signal,
-      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_ANON, Authorization:'Bearer '+(session?.access_token||'') },
-      body: JSON.stringify({ report: aiPayload(R) }) });
-    clearTimeout(tm);
-    let j=null; try{ j = await r.json(); }catch(e){}
-    if(r.status===404) return done('missing', null, 'دالة ai-report مو منشورة');
-    if(!r.ok) return done(r.status===503?'missing':'fail', null, [(j&&j.error)||('خطأ '+r.status), j&&j.detail].filter(Boolean).join(' · '));
-    if(!j || !j.summary) return done('fail', null, 'الرد ما بيه تحليل');
-    AREP_CACHE[key] = j;
-    done('ok', j);
-  }catch(e){ done('fail', null, e&&e.name==='AbortError'?'المساعد طوّل أكثر من دقيقة ونص — جرّب مرة ثانية':'ما وصل الطلب للدالة ('+(e&&e.message||'شبكة')+')'); }
+  const x = await aiCall({ fn:'ai-report', body:{ report: aiPayload(R) }, key, timeout:90000 });
+  if(x.err) return done('fail', null, aiNetWhy(x.err));
+  const j=x.j;
+  if(x.status===404) return done('missing', null, 'دالة ai-report مو منشورة');
+  if(!x.ok) return done(x.status===503?'missing':'fail', null, [(j&&j.error)||('خطأ '+x.status), j&&j.detail].filter(Boolean).join(' · '));
+  if(!j || !j.summary) return done('fail', null, 'الرد ما بيه تحليل');
+  if(!x.cached) aiStorePut(x.h, j);
+  AREP_CACHE[key] = j;
+  done('ok', j);
 }
 async function arepPDF(){
   if(!AREP) return;
@@ -7497,7 +7546,8 @@ async function openIns(f0){
     const { rows, rg, partial } = await insLoad(f);
     if(!INS || INS.f!==f) return;
     INS.R = insBuild(rows, rg, f); INS.partial=!!partial;
-    const ck=insAiKey(INS.R); if(INS_AI_CACHE[ck]){ INS.ai=INS_AI_CACHE[ck]; INS.aiState='ok'; }
+    const ck=insAiKey(INS.R), had=INS_AI_CACHE[ck] || aiPeek('ai-coach', { mode:'insights', data:insAiPayload(INS.R) });
+    if(had){ INS.ai=had; INS.aiState='ok'; }
   }catch(e){ if(INS) INS.err=clean(e.message||String(e)); }
   if(INS){ INS.busy=false; paintIns(); }
 }
@@ -7572,7 +7622,7 @@ function insSections(R){
 }
 function insAiSection(){
   const st=INS.aiState, ai=INS.ai;
-  if(st==='loading') return `<div class="ar-sec"><h3 class="ar-h"><span>✦</span>قراءة المساعد الذكي</h3><div class="ar-ai wait"><i></i>المساعد يقرا الأسباب وكلام العملاء…</div></div>`;
+  if(st==='loading') return `<div class="ar-sec"><h3 class="ar-h"><span>✦</span>قراءة المساعد الذكي</h3><div class="ar-ai wait"><i></i><span>المساعد يقرا الأسباب وكلام العملاء…${aiWaitHTML(insAiKey(INS.R))}</span></div></div>`;
   if(st!=='ok' || !ai) return `<div class="ar-sec"><h3 class="ar-h"><span>✦</span>قراءة المساعد الذكي</h3>
     ${INS.why?`<div class="ar-ai off" style="margin-bottom:10px"><b>ما وصلت القراءة</b><span dir="auto">${esc(INS.why)}</span></div>`:''}
     <div class="ar-call">المساعد يقرا كل هاي الأرقام وعيّنات من كلام العملاء (بلا أسماء ولا أرقام) ويكتب: السبب الجذري لكل مشكلة · شلون نعالجها بالعرض أو بالشغل · تدريب الفريق · خطة عمل.</div>
@@ -7636,6 +7686,7 @@ function paintIns(){
     };
   }
   const sc=ov.querySelector('.ar-scroll'); if(sc&&top) sc.scrollTop=top;
+  aiWaitTick();
 }
 // رسم «ليش نخسر» — نفس الإعدادات للشاشة والـ PDF
 function insLostCfg(R){
@@ -7700,22 +7751,17 @@ function insAiPayload(R){
 }
 async function insFetchAI(){
   if(!INS||!INS.R) return;
-  const R=INS.R, key=insAiKey(R);
+  const R=INS.R, key=insAiKey(R), fresh = INS.aiState==='ok';   // «أعد القراءة» = قراءة جديدة فعلاً، مو من الذاكرة
   INS.aiState='loading'; INS.why=''; paintIns();
   const done=(st,ai,why)=>{ if(INS && INS.R===R){ INS.aiState=st; INS.ai=ai||null; INS.why=why||''; paintIns(); } };
-  try{
-    const { data:{ session } } = await sb.auth.getSession();
-    const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(), 90000);
-    const r=await fetch(`${SUPABASE_URL}/functions/v1/ai-coach`, { method:'POST', signal:ctl.signal,
-      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_ANON, Authorization:'Bearer '+(session?.access_token||'') },
-      body:JSON.stringify({ mode:'insights', data:insAiPayload(R) }) });
-    clearTimeout(tm);
-    let j=null; try{ j=await r.json(); }catch(e){}
-    if(r.status===404) return done('fail', null, 'دالة ai-coach مو منشورة بعد');
-    if(!r.ok) return done('fail', null, (j&&j.error)||('خطأ '+r.status));
-    if(!j || !j.summary) return done('fail', null, 'الرد ما بيه قراءة');
-    INS_AI_CACHE[key]=j; done('ok', j);
-  }catch(e){ done('fail', null, e&&e.name==='AbortError'?'المساعد طوّل — جرّب مرة ثانية':'ما وصل الطلب ('+(e&&e.message||'شبكة')+')'); }
+  const x = await aiCall({ fn:'ai-coach', body:{ mode:'insights', data:insAiPayload(R) }, key, timeout:90000, fresh });
+  if(x.err) return done('fail', null, aiNetWhy(x.err, 'المساعد طوّل — جرّب مرة ثانية'));
+  const j=x.j;
+  if(x.status===404) return done('fail', null, 'دالة ai-coach مو منشورة بعد');
+  if(!x.ok) return done('fail', null, (j&&j.error)||('خطأ '+x.status));
+  if(!j || !j.summary) return done('fail', null, 'الرد ما بيه قراءة');
+  if(!x.cached) aiStorePut(x.h, j);
+  INS_AI_CACHE[key]=j; done('ok', j);
 }
 async function insExcel(R){
   toast('جاري تجهيز ملف Excel…');
@@ -14441,19 +14487,14 @@ async function crFetchAI(R){
   const key=crKey(R);
   const done=(state, ai, why)=>{ if(CREP && crKey(CREP.R)===key){ CREP.state=state; CREP.ai=ai||null; CREP.why=why||''; paintCRep(true); } };
   if(R.n<1) return done('fail', null, 'ما أكو فرص بهذا النطاق حتى يحللها المساعد');
-  try{
-    const { data:{ session } } = await sb.auth.getSession();
-    const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(), 100000);
-    const r=await fetch(`${SUPABASE_URL}/functions/v1/ai-report`, { method:'POST', signal:ctl.signal,
-      headers:{ 'Content-Type':'application/json', apikey:SUPABASE_ANON, Authorization:'Bearer '+(session?.access_token||'') },
-      body:JSON.stringify({ kind:'commercial', report:crPayload(R) }) });
-    clearTimeout(tm);
-    let j=null; try{ j=await r.json(); }catch(e){}
-    if(r.status===404) return done('missing', null, 'دالة ai-report مو منشورة');
-    if(!r.ok) return done(r.status===503?'missing':'fail', null, [(j&&j.error)||('خطأ '+r.status), j&&j.detail].filter(Boolean).join(' · '));
-    if(!j || !j.summary || !('decisions' in j)) return done(j&&j.summary?'old':'fail', null, j&&j.summary?'':'الرد ما بيه تحليل');
-    CREP_CACHE[key]=j; done('ok', j);
-  }catch(e){ done('fail', null, e&&e.name==='AbortError'?'المساعد طوّل أكثر من دقيقة ونص — جرّب مرة ثانية':'ما وصل الطلب للدالة ('+(e&&e.message||'شبكة')+')'); }
+  const x = await aiCall({ fn:'ai-report', body:{ kind:'commercial', report:crPayload(R) }, key, timeout:100000 });
+  if(x.err) return done('fail', null, aiNetWhy(x.err));
+  const j=x.j;
+  if(x.status===404) return done('missing', null, 'دالة ai-report مو منشورة');
+  if(!x.ok) return done(x.status===503?'missing':'fail', null, [(j&&j.error)||('خطأ '+x.status), j&&j.detail].filter(Boolean).join(' · '));
+  if(!j || !j.summary || !('decisions' in j)) return done(j&&j.summary?'old':'fail', null, j&&j.summary?'':'الرد ما بيه تحليل');
+  if(!x.cached) aiStorePut(x.h, j);
+  CREP_CACHE[key]=j; done('ok', j);
 }
 function crDestroy(){ if(CREP && CREP.charts){ CREP.charts.forEach(c=>{ try{c.destroy();}catch(e){} }); CREP.charts=[]; } }
 function paintCRep(keepScroll){
@@ -14506,7 +14547,7 @@ async function openCRep(){
   else CR_ANA=data||{ events:[], searches:[] };
   if(!$('#crep.open')) return;
   const f={ period:'q', project:comF.proj!=='all'?comF.proj:'', owner:comF.owner!=='all'?comF.owner:'' };
-  const R=buildComRep(f), cached=CREP_CACHE[crKey(R)];
+  const R=buildComRep(f), cached=CREP_CACHE[crKey(R)] || aiPeek('ai-report', { kind:'commercial', report:crPayload(R) });
   CREP={ f, R, ai:cached||null, state:cached?'ok':'loading', charts:[], logo:'' };
   try{ CREP.logo=await logoDataURL(); }catch(e){}
   paintCRep();
