@@ -1955,13 +1955,45 @@ body.agr-on{overflow:hidden}
 .st-heat{display:flex;gap:2px;align-items:flex-end;height:42px;margin-top:8px;padding:2px;border-bottom:1px solid var(--line)}
 .st-heat i{flex:1;min-width:3px;background:var(--amber,#C9A055);border-radius:2px 2px 0 0}
 .st-meet{margin-top:8px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--amber) 14%,transparent);font-size:13px}
-.st-stack{display:flex;gap:4px}.st-stack .st-tag{text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:60px}
+.st-stack{display:flex;flex-wrap:wrap;gap:4px}.st-stack .st-tag{text-align:center;white-space:nowrap;min-width:0;flex:1 1 auto}
+.st-kpis .kpi:last-child:nth-child(odd){grid-column:1/-1}
 .st-mon{display:flex;gap:8px;align-items:flex-end;overflow-x:auto;padding-bottom:4px}
 .st-mon>div{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:38px;font-size:11px;color:var(--muted)}.st-mon b{font-size:12px;color:var(--text)}
 .st-mb{display:flex;gap:2px;align-items:flex-end;height:92px}.st-mb i{width:12px;border-radius:3px 3px 0 0}
 .st-mb i.s,.st-lg.s{background:#C9A055}.st-mb i.w,.st-lg.w{background:#2E7D4F}
 .st-lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px}
-.st-topr{display:flex;gap:8px;align-items:center;cursor:pointer}
+/* ── الدراسات والعروض: تصميم الجوال — أيقونات مرسومة بدل الإيموجي، شريط أدوات ينزلق، بطاقات مرتبة ── */
+.si{width:16px;height:16px;flex:0 0 auto;vertical-align:-3px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.st-nav{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin:0 -2px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.st-nav::-webkit-scrollbar{display:none}
+.st-nav .st-b{flex:0 0 auto;white-space:nowrap}
+.st-new{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px}
+.st-nb{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--raised);color:var(--text);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;text-align:start;min-height:54px;line-height:1.4}
+.st-nb .si{width:22px;height:22px;color:var(--gold)}
+.st-nb:hover{border-color:var(--accent-edge)}
+.st-nb.ai{grid-column:1/-1;background:var(--gold-fill);border-color:var(--gold-fill);color:var(--on-warm)}
+.st-nb.ai .si{color:inherit}
+.st-card .st-ch{display:flex;gap:8px;align-items:flex-start}
+.st-card .st-ch h3{flex:1;min-width:0;margin:0;line-height:1.5}
+.st-card .st-m{margin-top:8px;gap:6px 12px}
+.st-card .st-m span{display:inline-flex;align-items:center;gap:4px;min-width:0}
+.st-card .st-m .si{width:14px;height:14px;color:var(--dim)}
+.st-tag{white-space:nowrap}
+.st-tag .si{width:12px;height:12px;vertical-align:-2px;margin-inline-end:3px}
+.st-topl{display:grid;gap:8px}
+.st-topr{display:block;border:1px solid var(--line-soft);border-radius:14px;background:var(--surface);padding:12px 14px;cursor:pointer;transition:border-color .2s}
+.st-topr:hover{border-color:var(--accent-edge)}
+.st-topr .tr1{display:flex;gap:8px;align-items:flex-start}
+.st-topr .tr1 b{flex:1;min-width:0;font-size:14.5px;line-height:1.5;color:var(--text)}
+.st-topr .tr2{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.6}
+.st-stats{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.st-stats span{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--text);background:var(--base);border:1px solid var(--line-soft);border-radius:20px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.st-stats .si{width:13px;height:13px;color:var(--gold)}
+.st-stats span.hot{background:color-mix(in srgb,var(--wa) 14%,transparent);border-color:transparent}
+.kpis.st-kpis{grid-template-columns:repeat(2,1fr)}
+@media(min-width:620px){.kpis.st-kpis{grid-template-columns:repeat(3,1fr)}}
+.kpi i .si{width:13px;height:13px;color:var(--gold);vertical-align:-2px;margin-inline-end:4px}
+.st-ic .si{width:15px;height:15px}
 .kpi.good b{color:#2E7D4F}
 .mp-cta{display:flex;align-items:center;gap:12px;width:100%;text-align:start;padding:14px 16px;margin:0 0 12px;border-radius:16px;border:0;cursor:pointer;font:inherit;color:#1E2B45;
   background:linear-gradient(135deg,#E8C987,#C9A055);box-shadow:0 6px 18px rgba(201,160,85,.35)}
@@ -15444,6 +15476,41 @@ const ST={ view:'list', list:[], loaded:false, busy:false, err:'', cur:null, dir
   ai:{}, aiOpen:null, aiAll:'', aiRev:null };
 const ST_STATUS={ draft:'مسودة', sent:'انرسلت', talks:'بالتفاوض', won:'انقبلت', lost:'انرفضت' };
 const ST_KIND={ res:'سكني', com:'تجاري', inv:'استثماري', gov:'عرض لجهة' };
+// أيقونات مرسومة (SVG) للدراسات والعروض — بدل الإيموجي: شكلها ثابت على كل الأجهزة وتاخذ لون النص
+const SI_P={
+  chart:'<path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/><path d="M22 20H2"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 17l.7 1.8 1.8.7-1.8.7L19 22l-.7-1.8-1.8-.7 1.8-.7z"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6"/><path d="M9 17h6"/>',
+  bank:'<path d="M3 10l9-6 9 6"/><path d="M4 10v9"/><path d="M9 10v9"/><path d="M15 10v9"/><path d="M20 10v9"/><path d="M2 19h20"/>',
+  coins:'<circle cx="9" cy="9" r="6"/><path d="M14.5 7.5a6 6 0 1 1-7 7"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L21 2"/><path d="M17 6l3 3"/><path d="M14 9l2 2"/>',
+  back:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+  refresh:'<path d="M20 11a8 8 0 0 0-14.3-4.3L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.3L20 16"/><path d="M20 21v-5h-5"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/>',
+  eye:'<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+  note:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  shop:'<path d="M3 9l1-5h16l1 5"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 11v9h14v-9"/><path d="M10 20v-5h4v5"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
+  gov:'<path d="M12 3L3 8h18z"/><path d="M5 8v9"/><path d="M12 8v9"/><path d="M19 8v9"/><path d="M3 21h18"/><path d="M3 17h18"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  pin:'<path d="M12 21s7-6.5 7-11a7 7 0 1 0-14 0c0 4.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  img:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/>',
+  star:'<path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  up:'<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>',
+  down:'<path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/>',
+  x:'<path d="M18 6L6 18"/><path d="M6 6l12 12"/>',
+  send:'<path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/>',
+  check:'<path d="M20 6L9 17l-5-5"/>'
+};
+const si = (k, cls) => `<svg class="si${cls?' '+cls:''}" viewBox="0 0 24 24" aria-hidden="true">${SI_P[k]||''}</svg>`;
+const ST_KIND_IC={ res:'home', com:'shop', inv:'trend', gov:'gov' };
 const stId = () => 's'+Math.random().toString(36).slice(2,9);
 const stErr = e => /could not find|schema cache|does not exist|function study_/i.test(e?.message||'')
   ? 'التبويب يحتاج ملف ٧٩ بالقاعدة — شغّله من SQL Editor' : clean(e?.message||String(e||''));
@@ -15694,31 +15761,33 @@ function stHTML(){
   if(ST.view==='dash') return stDashHTML();
   const L=ST.list;
   return `<div class="sec"><h2>الدراسات والعروض</h2><em>${L.length?L.length+' دراسة':''}</em></div>
-  <div class="st-top">
-    <button class="st-b pri" data-stnew="res">+ دراسة سكنية</button>
-    <button class="st-b" data-stnew="com">+ تجارية</button>
-    <button class="st-b" data-stnew="inv">+ استثمارية</button>
-    <button class="st-b" data-stnew="gov">+ عرض لنقابة / وزارة / دائرة</button>
-    <button class="st-b gold" id="st-brief-new">✦ دراسة من سطرين</button>
-    <button class="st-b" id="st-dash">📊 النتائج</button>
-    <button class="st-b gold" id="st-prof">ملف سند</button>
-    <button class="st-b" id="st-mkt">بنك السوق</button>
-    <button class="st-b" id="st-price">💰 الأسعار وآليات الدفع</button>
-    ${STUDY_ADMIN?'<button class="st-b" id="st-acc">الصلاحيات</button>':''}
+  <div class="st-nav">
+    <button class="st-b" id="st-dash">${si('chart')}النتائج</button>
+    <button class="st-b gold" id="st-prof">${si('file')}ملف سند</button>
+    <button class="st-b" id="st-mkt">${si('bank')}بنك السوق</button>
+    <button class="st-b" id="st-price">${si('coins')}الأسعار وآليات الدفع</button>
+    ${STUDY_ADMIN?`<button class="st-b" id="st-acc">${si('key')}الصلاحيات</button>`:''}
+  </div>
+  <div class="st-new">
+    <button class="st-nb" data-stnew="res">${si('home')}<span>دراسة سكنية</span></button>
+    <button class="st-nb" data-stnew="com">${si('shop')}<span>دراسة تجارية</span></button>
+    <button class="st-nb" data-stnew="inv">${si('trend')}<span>دراسة استثمارية</span></button>
+    <button class="st-nb" data-stnew="gov">${si('gov')}<span>عرض لنقابة / وزارة / دائرة</span></button>
+    <button class="st-nb ai" id="st-brief-new">${si('spark')}<span>دراسة كاملة من سطرين — بالذكاء</span></button>
   </div>
   ${ST.err?`<div class="fit miss"><i>ما انقرت الدراسات</i><span class="line">${esc(ST.err)}</span></div>`:''}
   ${!ST.loaded&&!ST.err ? '<div class="spin">جاري التحميل…</div>'
    : L.length ? `<div class="st-list">${L.map(s=>`<button class="st-card" data-stopen="${s.id}">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px"><h3 style="flex:1;margin:0">${esc(s.title)}</h3>
-        ${s.due?'<span class="st-tag lost">⏰ تابع اليوم</span>':''}<span class="st-tag ${s.status}">${esc(ST_STATUS[s.status]||s.status)}</span></div>
-      <div class="st-m"><span>${esc(ST_KIND[s.kind]||'')}</span>${s.project_name?`<span>${esc(s.project_name)}</span>`:''}
-        ${s.recipient?`<span>إلى: ${esc(s.recipient)}</span>`:''}<span>${esc(stAgo(s.updated_at))}${s.by?' · '+esc(s.by):''}</span>${s.follow_at&&!s.due?`<span>متابعة: ${esc(s.follow_at)}</span>`:''}</div></button>`).join('')}</div>`
-   : `<div class="st-empty">ما أكو دراسات بعد.<br>ابدأ بـ«+ دراسة سكنية» — القالب جاهز على أسلوب دراسة الماسة،<br>وراجع «ملف سند» مرة وحدة لأنه ينضاف لكل دراسة.</div>`}`;
+      <div class="st-ch"><h3>${esc(s.title)}</h3>
+        ${s.due?`<span class="st-tag lost">${si('bell')}تابع اليوم</span>`:''}<span class="st-tag ${s.status}">${esc(ST_STATUS[s.status]||s.status)}</span></div>
+      <div class="st-m"><span>${si(ST_KIND_IC[s.kind]||'file')}${esc(ST_KIND[s.kind]||'')}</span>${s.project_name?`<span>${si('pin')}${esc(s.project_name)}</span>`:''}
+        ${s.recipient?`<span>${si('user')}${esc(s.recipient)}</span>`:''}<span>${si('clock')}${esc(stAgo(s.updated_at))}${s.by?' · '+esc(s.by):''}</span>${s.follow_at&&!s.due?`<span>${si('cal')}متابعة ${esc(s.follow_at)}</span>`:''}</div></button>`).join('')}</div>`
+   : `<div class="st-empty">ما أكو دراسات بعد.<br>ابدأ بـ«دراسة سكنية» — القالب جاهز على أسلوب دراسة الماسة،<br>وراجع «ملف سند» مرة وحدة لأنه ينضاف لكل دراسة.</div>`}`;
 }
 
 function stSecHTML(s, i, n, prof){
-  const up=`<button class="st-ic" data-stup="${s.id}" ${i===0?'disabled':''} title="فوق">↑</button>`;
-  const dn=`<button class="st-ic" data-stdn="${s.id}" ${i===n-1?'disabled':''} title="جوّه">↓</button>`;
+  const up=`<button class="st-ic" data-stup="${s.id}" ${i===0?'disabled':''} title="فوق">${si('up')}</button>`;
+  const dn=`<button class="st-ic" data-stdn="${s.id}" ${i===n-1?'disabled':''} title="جوّه">${si('down')}</button>`;
   const flag = ST.chk && ST.chk.some(c=>c.sid===s.id && c.bad);
   if(s.a){
     const [t,d]=ST_AUTO[s.a]||[s.a,''];
@@ -15772,7 +15841,7 @@ function stChkHTML(){
 function stEditHTML(){
   const s=ST.cur, secs=s.data.sections||[];
   return `<div class="sec"><h2>${s.id?'تعديل دراسة':'دراسة جديدة'}</h2><em>${esc(ST_KIND[s.kind]||'')}</em></div>
-  <div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button>
+  <div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button>
     <button class="st-b sm" id="st-help">${ST.help?'إخفاء طريقة الكتابة':'طريقة الكتابة'}</button></div>
   ${stHelpHTML()}
   <div class="st-head">
@@ -15803,10 +15872,10 @@ function stEditHTML(){
   <div class="st-bar">
     <button class="st-b pri" id="st-save">حفظ</button>
     <button class="st-b" id="st-chk">فحص</button>
-    <button class="st-b" id="st-aiall" ${ST.aiAll?'disabled':''}>${ST.aiAll?'✦ '+esc(ST.aiAll):'✦ اكتب الفاضي'}</button>
-    <button class="st-b" id="st-aichk" ${ST.aiRev==='busy'?'disabled':''}>${ST.aiRev==='busy'?'✦ جاري التدقيق…':'✦ فحص ذكي'}</button>
-    <button class="st-b gold" id="st-pdf">معاينة و PDF</button>
-    <button class="st-b gold" id="st-share" title="رابط تفتحه الجهة من التلفون — وتعرف متى فتحوه">🔗 رابط للجهة</button>
+    <button class="st-b" id="st-aiall" ${ST.aiAll?'disabled':''}>${si('spark')}${ST.aiAll?esc(ST.aiAll):'اكتب الفاضي'}</button>
+    <button class="st-b" id="st-aichk" ${ST.aiRev==='busy'?'disabled':''}>${si('spark')}${ST.aiRev==='busy'?'جاري التدقيق…':'فحص ذكي'}</button>
+    <button class="st-b gold" id="st-pdf">${si('file')}معاينة و PDF</button>
+    <button class="st-b gold" id="st-share" title="رابط تفتحه الجهة من التلفون — وتعرف متى فتحوه">${si('link')}رابط للجهة</button>
     ${s.id?`<button class="st-b sm" id="st-dup">نسخة</button><button class="st-b sm dng" id="st-del">حذف</button>`:''}
     <span id="st-state" class="${ST.dirty?'st-dirty':'st-ok'}">${ST.dirty?'تعديلات ما انحفظت':(s.id?'محفوظة':'')}</span>
   </div>`;
@@ -15815,9 +15884,9 @@ function stAIRevHTML(){
   const R=ST.aiRev; if(!R || R==='busy') return '';
   if(R.err) return `<div class="st-chk"><h4 style="color:var(--coral)">الفحص الذكي ما اشتغل</h4><div class="hint" style="margin:0">${esc(R.err)}</div>
     ${R.detail&&STUDY_ADMIN?`<details style="margin-top:6px"><summary class="hint" style="margin:0;cursor:pointer">التفاصيل التقنية (للأدمن)</summary><code style="display:block;font-size:11.5px;direction:ltr;text-align:left;white-space:pre-wrap;word-break:break-all;margin-top:4px">${esc(R.detail)}</code></details>`:''}
-    <button class="st-b sm" id="st-airev2" style="margin-top:8px">↻ جرّب مرة ثانية</button></div>`;
+    <button class="st-b sm" id="st-airev2" style="margin-top:8px">${si('refresh')}جرّب مرة ثانية</button></div>`;
   const secs=ST.cur.data.sections, name=sid=>{ const x=secs.find(y=>y.id===sid); return x?(x.t||'قسم'):''; };
-  return `<div class="st-chk st-aichk"><h4>✦ الفحص الذكي${R.issues.length?' · '+R.issues.filter(i=>i.severity==='bad').length+' لازم تنصلح · '+R.issues.filter(i=>i.severity!=='bad').length+' للانتباه':''}</h4>
+  return `<div class="st-chk st-aichk"><h4>${si('spark')} الفحص الذكي${R.issues.length?' · '+R.issues.filter(i=>i.severity==='bad').length+' لازم تنصلح · '+R.issues.filter(i=>i.severity!=='bad').length+' للانتباه':''}</h4>
     <div style="font-size:13.5px;line-height:1.8;margin-bottom:6px">${esc(R.verdict||'')}</div>
     ${R.issues.length?`<ul style="margin:0;padding-inline-start:18px">${R.issues.map((i,k)=>`<li data-stgo="${esc(i.sid||'')}" style="${i.done?'opacity:.5':''}"><b>${i.severity==='bad'?'✕':'!'}</b>
       ${name(i.sid)?`«${esc(name(i.sid))}»: `:''}${esc(i.issue)}${i.fix?` <span style="color:var(--muted)">— ${esc(i.fix)}</span>`:''}
@@ -15828,7 +15897,7 @@ function stProfHTML(){
   const p=ST.prof||ST_PROFILE_DEFAULT(); if(!ST.prof) ST.prof=p;
   const secs=p.sections||[];
   return `<div class="sec"><h2>ملف سند</h2><em>ينضاف لكل دراسة</em></div>
-  <div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button>
+  <div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button>
     <button class="st-b sm" id="st-help">${ST.help?'إخفاء طريقة الكتابة':'طريقة الكتابة'}</button></div>
   ${stHelpHTML()}
   <div class="st-head">
@@ -15839,10 +15908,10 @@ function stProfHTML(){
   </div>
   ${secs.map((x,i)=>stSecHTML(x,i,secs.length)).join('')}
   <div class="st-add"><button class="st-b sm" id="st-addsec">+ قسم جديد</button></div>
-  <div class="sec" style="margin-top:22px"><h2>★ مكتبة قصص النجاح</h2><em>تنضاف لأي دراسة من ＋ ← «قصة نجاح»</em></div>
+  <div class="sec" style="margin-top:22px"><h2>مكتبة قصص النجاح</h2><em>تنضاف لأي دراسة من ＋ ← «قصة نجاح»</em></div>
   ${stStories().map(x=>`<div class="st-sec st-sty">
     <div class="st-sh"><input class="field" data-styt="${x.id}" value="${esc(x.t||'')}" placeholder="اسم القصة" maxlength="80">
-      <button class="st-ic" data-stydel="${x.id}" title="حذف" style="color:var(--coral)">✕</button></div>
+      <button class="st-ic" data-stydel="${x.id}" title="حذف" style="color:var(--coral)">${si('x')}</button></div>
     <textarea class="field" data-styb="${x.id}" rows="5" maxlength="3000">${esc(x.b||'')}</textarea></div>`).join('')}
   <div class="st-add"><button class="st-b sm" id="st-addsty">+ قصة جديدة</button></div>
   <div class="st-bar"><button class="st-b pri" id="st-psave">حفظ ملف سند</button>
@@ -15851,7 +15920,7 @@ function stProfHTML(){
 function stAccHTML(){
   const A=ST.acc;
   return `<div class="sec"><h2>صلاحية الدراسات</h2><em>الأدمن يدخل دائماً</em></div>
-  <div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button></div>
+  <div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button></div>
   ${!A?'<div class="spin">جاري التحميل…</div>':A.err?`<div class="fit miss"><i>ما انقرت</i><span class="line">${esc(A.err)}</span></div>`
    :`<div class="brk">${A.rows.map(r=>`<div class="st-acc"><span>${esc(r.name)} <em>${esc(ROLE_AR[r.role]||r.role)}</em></span>
       <button class="opt ${r.on?'sel':''}" data-stacc="${r.id}">${r.on?'عنده صلاحية':'ما عنده'}</button></div>`).join('')||'<div class="st-acc">ما أكو موظفين</div>'}</div>
@@ -16465,11 +16534,11 @@ function stMpDetail(m){
   const D=m.data||{}, M=v=>v?stIQD(+v):'—';
   return `<div class="mp-det">
     <div><b>${esc(m.name)}</b>${D.dev?' · '+esc(D.dev):''} — ${esc(m.gov)}${m.area?' / '+esc(m.area):''}</div>
-    <div class="hint" style="margin:2px 0">📍 ${esc(D.location||'')}${D.stage?' · '+esc(D.stage):''}${D.total?' · '+D.total+' وحدة':''}</div>
-    <div class="hint" style="margin:2px 0">📞 <a href="tel:${esc(D.phone||'')}">${esc(D.phone||'')}</a> · المصدر: ${esc(D.source||'')}${D.services?' · الخدمات: '+esc(D.services):''}</div>
+    <div class="hint" style="margin:2px 0">${si('pin')} ${esc(D.location||'')}${D.stage?' · '+esc(D.stage):''}${D.total?' · '+D.total+' وحدة':''}</div>
+    <div class="hint" style="margin:2px 0">${si('phone')} <a href="tel:${esc(D.phone||'')}">${esc(D.phone||'')}</a> · المصدر: ${esc(D.source||'')}${D.services?' · الخدمات: '+esc(D.services):''}</div>
     <table class="mp-t">${(D.units||[]).map(u=>`<tr><td>${esc(u.type||'')}${u.model?' '+esc(u.model):''}</td><td class="num">${u.size?(+u.size)+' م²':'—'}</td><td class="num">${M(u.price)}</td><td class="num">${u.size&&u.price?M(u.price/u.size)+'/م²':''}</td><td>${esc(u.rooms||'')}</td></tr>`).join('')}</table>
-    ${(D.plans||[]).map(p=>`<div class="mp-pl">💳 <b>${esc(p.name)}</b>${p.down!=null?` · مقدّمة ${p.down_pct?p.down+'%':M(p.down)}`:''}${p.inst?` · قسط ${M(p.inst)} ${+p.every>1?'كل '+stMo(+p.every):'شهرياً'}`:''}${p.months?` لمدة ${stMo(+p.months)}`:''}${p.hand?` · تسليم ${M(p.hand)}`:''}${p.disc?` · خصم ${p.disc}%`:''}${p.note?` — ${esc(p.note)}`:''}</div>`).join('')}
-    ${D.note?`<div class="hint" style="margin:4px 0 0">📝 ${esc(D.note)}</div>`:''}</div>`;
+    ${(D.plans||[]).map(p=>`<div class="mp-pl">${si('card')} <b>${esc(p.name)}</b>${p.down!=null?` · مقدّمة ${p.down_pct?p.down+'%':M(p.down)}`:''}${p.inst?` · قسط ${M(p.inst)} ${+p.every>1?'كل '+stMo(+p.every):'شهرياً'}`:''}${p.months?` لمدة ${stMo(+p.months)}`:''}${p.hand?` · تسليم ${M(p.hand)}`:''}${p.disc?` · خصم ${p.disc}%`:''}${p.note?` — ${esc(p.note)}`:''}</div>`).join('')}
+    ${D.note?`<div class="hint" style="margin:4px 0 0">${si('note')} ${esc(D.note)}</div>`:''}</div>`;
 }
 function stMpAdminHTML(){
   if(!STUDY_ADMIN) return '';
@@ -16629,9 +16698,9 @@ function stInsBox(s){
   if(ST.insOpen!==s.id) return '';
   return `<div class="st-aim st-ins">${ST_INS.map(([k,l])=>`<button class="st-b sm" data-stins="${k}">${l}</button>`).join('')}
     ${ST.view==='edit'?`<button class="st-b sm gold" data-stmk="${s.id}">من بنك السوق</button>
-      <button class="st-b sm gold ${ST.insStory?'on':''}" data-stsopen="1">★ قصة نجاح</button>
-      <button class="st-b sm gold" data-stimg="${s.id}">🖼 صورة</button>`:''}
-    ${ST.view==='edit'&&ST.insStory?`<div class="st-stl">${stStories().filter(x=>String(x.b||'').trim()).map(x=>`<button class="st-b sm" data-stsins="${x.id}">★ ${esc(x.t||'قصة')}</button>`).join('')||'<span class="hint" style="margin:0">ما أكو قصص — أضفها من «ملف سند»</span>'}</div>`:''}
+      <button class="st-b sm gold ${ST.insStory?'on':''}" data-stsopen="1">${si('star')}قصة نجاح</button>
+      <button class="st-b sm gold" data-stimg="${s.id}">${si('img')}صورة</button>`:''}
+    ${ST.view==='edit'&&ST.insStory?`<div class="st-stl">${stStories().filter(x=>String(x.b||'').trim()).map(x=>`<button class="st-b sm" data-stsins="${x.id}">${si('star')}${esc(x.t||'قصة')}</button>`).join('')||'<span class="hint" style="margin:0">ما أكو قصص — أضفها من «ملف سند»</span>'}</div>`:''}
     <div class="hint" style="margin:2px 0 0;flex:1 1 100%">ينضاف مثال بمكان المؤشر — بدّل الأرقام بأرقامك الحقيقية.</div></div>`;
 }
 
@@ -16639,7 +16708,7 @@ function stInsBox(s){
 function stMarketHTML(){
   const M=ST.mk||{};
   return `<div class="sec"><h2>بنك بيانات السوق</h2><em>${M.list?M.list.length+' قراءة':''}</em></div>
-  <div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button><button class="st-b pri sm" id="st-mknew">+ سجّل معلومة</button></div>
+  <div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button><button class="st-b pri sm" id="st-mknew">+ سجّل معلومة</button></div>
   ${stMpAdminHTML()}
   <div class="st-head"><div class="st-g3">
     <div><label>المحافظة</label><select class="field" id="mkf-gov"><option value="">الكل</option>${ST_GOVS.map(g=>`<option ${M.gov===g?'selected':''}>${g}</option>`).join('')}</select></div>
@@ -16667,7 +16736,7 @@ function stFollowHTML(s){
   const due=s.follow_at && s.follow_at<=today() && ['sent','talks'].includes(s.status);
   return `<div class="st-fl"><label>موعد المتابعة</label>
     <div class="st-flr"><input class="field" type="date" id="st-fdate" value="${esc(s.follow_at||'')}"><button class="st-b sm" id="st-fset">حفظ الموعد</button>
-      ${due?'<span class="st-tag lost">⏰ وصل الموعد</span>':''}<span style="flex:1"></span><button class="st-b sm" id="st-vers">النسخ السابقة</button></div>
+      ${due?`<span class="st-tag lost">${si('bell')}وصل الموعد</span>`:''}<span style="flex:1"></span><button class="st-b sm" id="st-vers">النسخ السابقة</button></div>
     <details id="st-log" ${ST.logOpen?'open':''}><summary>سجل المتابعة والملاحظات</summary>
       <div class="st-flr" style="margin:8px 0"><input class="field" id="st-note" maxlength="1000" placeholder="مثلاً: اتصلت بالمدير، يريدون اجتماع الأحد"><button class="st-b sm pri" id="st-addnote">أضف</button></div>
       <div id="st-logl">${!ST.log?'<div class="hint">جاري التحميل…</div>':!ST.log.length?'<div class="hint">ما أكو ملاحظات بعد.</div>'
@@ -17589,7 +17658,7 @@ function stPvPaint(){
   const split=[...new Set(P.filter(p=>p.parts>1).map(p=>p.key))];
   const hidden=Object.entries(fmt).filter(([k,f])=>f.hide);
   el.innerHTML=`<div class="stpv-top">
-      <div class="stpv-h"><b>معاينة وتنسيق</b><span>${P.length} صفحة${split.length?` · <i>${split.length} قسم طلع بأكثر من صفحة</i>`:''}</span><span class="stpv-tip">✎ اضغط على أي سطر بالصفحة حتى تعدّل كتابته أو حجمه أو لونه</span></div>
+      <div class="stpv-h"><b>معاينة وتنسيق</b><span>${P.length} صفحة${split.length?` · <i>${split.length} قسم طلع بأكثر من صفحة</i>`:''}</span><span class="stpv-tip">${si('edit')} اضغط على أي سطر بالصفحة حتى تعدّل كتابته أو حجمه أو لونه</span></div>
       <div class="stpv-g">
         ${stLetter(s)?`<span class="stpv-lb">اللون</span>${Object.entries(ST_ACC).map(([k,a])=>`<button class="st-b sm stpv-th ${(stLetter(s).accent||'olive')===k?'on':''}" data-pvacc="${k}"><i style="background:${a.c.navy}"></i><i style="background:${a.c.gold}"></i>${a.n}</button>`).join('')}`:`
         <span class="stpv-lb">التصميم</span>${Object.entries(ST_THEMES).map(([k,t])=>`<button class="st-b sm stpv-th ${(look.theme||'lux')===k?'on':''}" data-pvth="${k}" title="${esc(t.d)}"><i style="background:${t.c.navy}"></i><i style="background:${t.c.gold}"></i>${t.n}</button>`).join('')}
@@ -17725,12 +17794,12 @@ async function vstInfo(a){
 }
 function vstCard(a,i){
   const st=a.result, S=a.sid?(ST.list||[]).find(x=>x.id===a.sid):null, cur=!a.sid&&!a.study&&vstCurId()?ST.cur:null;
-  const pick = VST_INFO.includes(a.type)||a.type==='s_new' ? '' : (S||cur) && !(a.cands&&a.cands.length>1&&!S) ? `<div class="vca-lead"><b>📑 ${esc((S||cur).title)}</b>${(S||cur).recipient?` <i>${esc((S||cur).recipient)}</i>`:''}</div>`
+  const pick = VST_INFO.includes(a.type)||a.type==='s_new' ? '' : (S||cur) && !(a.cands&&a.cands.length>1&&!S) ? `<div class="vca-lead"><b>${si('file')} ${esc((S||cur).title)}</b>${(S||cur).recipient?` <i>${esc((S||cur).recipient)}</i>`:''}</div>`
     : `<div class="vca-lead miss"><select class="field" data-vst="${i}"><option value="">${a.study?'ما لكيت «'+esc(a.study)+'» — اختار الدراسة':'اختار الدراسة…'}</option>
       ${((a.cands&&a.cands.length)?a.cands:(ST.list||[])).slice(0,200).map(s=>`<option value="${s.id}" ${a.sid===s.id?'selected':''}>${esc(s.title)}${s.recipient?' · '+esc(s.recipient):''}</option>`).join('')}</select></div>`;
-  const W={ s_open:'📂 افتح الدراسة', s_new:'✦ دراسة جديدة', s_status:'➜ الحالة: '+(VST_ST_AR[a.status]||''), s_follow:'📅 موعد المتابعة', s_note:'📝 ملاحظة بالسجل',
-    s_set:'✏️ تعديل', s_ai:'✦ الذكاء يكتب القسم', s_fill:'✦ اكتب الأقسام الفاضية', s_share:'🔗 رابط مشاهدة للجهة', s_preview:'👁 المعاينة و PDF',
-    calc:'🧮 الحسبة', s_stats:'👀 مشاهدات الرابط', s_dash:'📊 نتائج الدراسات', market:'📈 بنك السوق' }[a.type]||a.type;
+  const W={ s_open:'افتح الدراسة', s_new:'دراسة جديدة', s_status:'الحالة: '+(VST_ST_AR[a.status]||''), s_follow:'موعد المتابعة', s_note:'ملاحظة بالسجل',
+    s_set:'تعديل', s_ai:'الذكاء يكتب القسم', s_fill:'اكتب الأقسام الفاضية', s_share:'رابط مشاهدة للجهة', s_preview:'المعاينة و PDF',
+    calc:'الحسبة', s_stats:'مشاهدات الرابط', s_dash:'نتائج الدراسات', market:'بنك السوق' }[a.type]||a.type;
   const F={ title:'العنوان', recipient:'الجهة', project:'المشروع', facts_add:'إضافة للحقائق' }, AC={ draft:'اكتبه', strengthen:'قوّيه', shorten:'اختصره', expand:'وسّعه', formal:'فصحى', custom:'طلب خاص' };
   let rows='';
   if(a.type==='s_new') rows=`<div class="vca-r"><span>النوع</span><b>${esc(ST_KIND[a.kind]||a.kind)}</b></div>${a.recipient?`<div class="vca-r"><span>الجهة</span><b>${esc(a.recipient)}</b></div>`:''}<div class="vca-r"><b>${esc(a.brief)}</b></div>`;
@@ -17837,18 +17906,18 @@ function stShareOpen(d0){
 function stSharesHTML(s){
   if(!s.id) return '';
   const L=ST.shares&&ST.shares.sid===s.id?ST.shares.list:null;
-  return `<details id="st-shares" ${ST.sharesOpen?'open':''}><summary>🔗 روابط المشاهدة${L&&L.length?` (${L.length})`:''}</summary>
-    ${!L?'<div class="hint">جاري التحميل…</div>':!L.length?'<div class="hint">ما أكو روابط بعد — اضغط «🔗 رابط للجهة» تحت.</div>'
+  return `<details id="st-shares" ${ST.sharesOpen?'open':''}><summary>${si('link')} روابط المشاهدة${L&&L.length?` (${L.length})`:''}</summary>
+    ${!L?'<div class="hint">جاري التحميل…</div>':!L.length?'<div class="hint">ما أكو روابط بعد — اضغط «رابط للجهة» تحت.</div>'
     :L.map(h=>{ const mx=Math.max(1,...(h.per_page||[]).map(p=>+p.s));
       return `<div class="st-sh1 ${h.active?'':'off'}">
       <div class="st-shr"><span class="st-tag ${h.active?'won':h.revoked?'lost':''}">${h.active?'فعّال':h.revoked?'موقوف':'منتهي'}</span>
-        <b>${h.opens?`👀 ${h.opens} فتحة · ${h.visitors} جهاز · ${stDur(h.secs)}`:'ما انفتح بعد'}</b>
+        <b>${h.opens?`${si('eye')} ${h.opens} فتحة · ${h.visitors} جهاز · ${stDur(h.secs)}`:'ما انفتح بعد'}</b>
         <span class="hint" style="margin:0">${h.last_view?'آخر مشاهدة '+esc(stAgo(h.last_view))+' · ':''}انعمل ${esc(stAgo(h.created_at))}${h.by?' · '+esc(h.by):''} · ينتهي ${esc(String(h.expires_at).slice(0,10))}</span></div>
       ${(h.per_page||[]).length?`<div class="st-heat" title="الوقت على كل صفحة">${Array.from({length:h.pages},(_,i)=>{ const p=(h.per_page||[]).find(x=>+x.n===i+1), v=p?+p.s:0;
         return `<i style="height:${Math.max(3,Math.round(v/mx*38))}px;${v?'':'opacity:.25'}" title="صفحة ${i+1}: ${stDur(v)}"></i>`; }).join('')}</div>
         <div class="hint" style="margin:2px 0 0">أكثر صفحة قعدوا عليها: ${(()=>{ const t=[...h.per_page].sort((a,b)=>b.s-a.s)[0]; const lb=(ST.pv&&ST.pv.pages&&ST.pv.pages[t.n-1])?ST.pv.pages[t.n-1].label:''; return `صفحة ${t.n}${lb?' ('+esc(lb)+')':''} — ${stDur(t.s)}`; })()}</div>`:''}
-      ${(h.meetings||[]).map(m=>`<div class="st-meet" style="display:flex;align-items:center;gap:8px">📅 <div style="flex:1">${esc(m.name)} · <a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>${m.when?' · '+esc(m.when):''}${m.note?`<br><em>${esc(m.note)}</em>`:''}<span class="hint" style="margin:0"> — ${esc(stAgo(m.at))}</span></div>
-<button class="st-b sm" data-mtask='${JSON.stringify(m).replace(/"/g, '&quot;')}' title="تحويل لمهمة">📝</button></div>`).join('')}
+      ${(h.meetings||[]).map(m=>`<div class="st-meet" style="display:flex;align-items:center;gap:8px">${si('cal')}<div style="flex:1">${esc(m.name)} · <a href="tel:${esc(m.phone)}">${esc(m.phone)}</a>${m.when?' · '+esc(m.when):''}${m.note?`<br><em>${esc(m.note)}</em>`:''}<span class="hint" style="margin:0"> — ${esc(stAgo(m.at))}</span></div>
+<button class="st-b sm" data-mtask='${JSON.stringify(m).replace(/"/g, '&quot;')}' title="تحويل لمهمة">${si('note')}</button></div>`).join('')}
       <div class="st-flr">${h.active?`<button class="st-b sm" data-shcopy="${esc(h.token)}">انسخ الرابط</button><button class="st-b sm dng" data-shoff="${h.id}">أوقف الرابط</button>`:''}</div></div>`; }).join('')}
   </details>`;
 }
@@ -17880,30 +17949,33 @@ function stSharesBind(){
 // ── لوحة النتائج ──
 function stDashHTML(){
   const D=ST.dash;
-  const head=`<div class="sec"><h2>📊 نتائج الدراسات</h2><em>${D&&D.at?esc(stAgo(D.at)):''}</em></div><div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button><button class="st-b sm" id="st-dashr">↻ تحديث</button></div>`;
+  const head=`<div class="sec"><h2>نتائج الدراسات</h2><em>${D&&D.at?esc(stAgo(D.at)):''}</em></div><div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button><button class="st-b sm" id="st-dashr">${si('refresh')}تحديث</button></div>`;
   if(!D) return head+'<div class="spin">جاري التحميل…</div>';
   if(D.err) return head+`<div class="fit miss"><i>ما انقرت</i><span class="line">${esc(D.err)}</span></div>`;
   const S=D.status||{}, n=k=>+S[k]||0, tot=Object.values(S).reduce((a,b)=>a+(+b),0), closed=n('won')+n('lost'), rate=closed?Math.round(n('won')/closed*100):null;
-  const kpi=(i,b,s,cl)=>`<div class="kpi ${cl||''}"><i>${i}</i><b class="num">${b}</b><s>${s}</s></div>`;
+  const kpi=(i,b,s,cl,ic)=>`<div class="kpi ${cl||''}"><i>${ic?si(ic):''}${i}</i><b class="num">${b}</b><s>${s}</s></div>`;
   const M=D.monthly||[], mx=Math.max(1,...M.map(m=>+m.sent));
   const mon=m=>{ const [y,mm]=String(m).split('-'); return new Date(+y, +mm-1, 1).toLocaleDateString('ar-IQ-u-nu-latn',{month:'short'}); };
   return head+`
-  <div class="kpis" style="margin-bottom:12px">
-    ${kpi('كل الدراسات', tot, `${n('draft')} مسودة`)}
-    ${kpi('انرسلت', n('sent')+n('talks')+n('won')+n('lost'), `${n('talks')} بالتفاوض`)}
-    ${kpi('انقبلت', n('won'), rate==null?'ما أكو نتائج بعد':`نسبة النجاح ${rate}%`, n('won')?'good':'')}
-    ${kpi('انرفضت', n('lost'), D.won_days!=null?`متوسط القبول ${D.won_days} يوم`:'—')}
-    ${kpi('روابط المشاهدة', +D.shares||0, `${+D.shares_active||0} فعّال · ${+D.viewed||0} انفتح`)}
-    ${kpi('فتحات الجهات', +D.opens||0, `${+D.meetings||0} طلب اجتماع`, (+D.meetings)?'good':'')}
-    ${kpi('متابعات اليوم', +D.follow_due||0, 'موعدها وصل', (+D.follow_due)?'warn':'')}
+  <div class="kpis st-kpis" style="margin-bottom:12px">
+    ${kpi('كل الدراسات', tot, `${n('draft')} مسودة`, '', 'file')}
+    ${kpi('انرسلت', n('sent')+n('talks')+n('won')+n('lost'), `${n('talks')} بالتفاوض`, '', 'send')}
+    ${kpi('انقبلت', n('won'), rate==null?'ما أكو نتائج بعد':`نسبة النجاح ${rate}%`, n('won')?'good':'', 'check')}
+    ${kpi('انرفضت', n('lost'), D.won_days!=null?`متوسط القبول ${D.won_days} يوم`:'—', '', 'x')}
+    ${kpi('روابط المشاهدة', +D.shares||0, `${+D.shares_active||0} فعّال · ${+D.viewed||0} انفتح`, '', 'link')}
+    ${kpi('فتحات الجهات', +D.opens||0, `${+D.meetings||0} طلب اجتماع`, (+D.meetings)?'good':'', 'eye')}
+    ${kpi('متابعات اليوم', +D.follow_due||0, 'موعدها وصل', (+D.follow_due)?'warn':'', 'bell')}
   </div>
   ${tot?`<div class="st-head"><div class="st-lh"><b>الحالات</b></div><div class="st-stack">${[['draft','مسودة'],['sent','انرسلت'],['talks','بالتفاوض'],['won','انقبلت'],['lost','انرفضت']].filter(([k])=>n(k)).map(([k,l])=>`<span class="st-tag ${k}" style="flex:${n(k)}">${l} ${n(k)}</span>`).join('')}</div>
     <div class="st-lh" style="margin-top:12px"><b>حسب النوع</b></div><div class="brk">${Object.entries(D.kind||{}).map(([k,v])=>`<div><span>${esc(ST_KIND[k]||k)}</span><em>${v} دراسة · ${(D.kind_won||{})[k]||0} انقبلت</em></div>`).join('')}</div></div>`:''}
   ${M.length?`<div class="st-head"><div class="st-lh"><b>الإرسال والقبول بالأشهر</b><span class="hint" style="margin:0"><i class="st-lg s"></i>انرسلت <i class="st-lg w"></i>انقبلت</span></div>
     <div class="st-mon">${M.map(m=>`<div><div class="st-mb"><i class="s" style="height:${Math.round(+m.sent/mx*90)}px"></i><i class="w" style="height:${Math.round(+m.won/mx*90)}px"></i></div><span>${esc(mon(m.m))}</span><b>${+m.sent||0}</b></div>`).join('')}</div></div>`:''}
   <div class="st-head"><div class="st-lh"><b>أكثر الدراسات مشاهدة</b><span class="hint" style="margin:0">من روابط المشاهدة</span></div>
-    ${(D.top||[]).length?`<div class="brk">${D.top.map(t=>`<div class="st-topr" data-stopen="${t.id}"><span style="flex:1;min-width:0"><b>${esc(t.title)}</b><br><em>${esc(t.recipient||'')}${t.last?' · آخر مشاهدة '+esc(stAgo(t.last)):''}</em></span>
-      <span class="st-tag ${t.status}">${esc(ST_STATUS[t.status]||t.status)}</span><em class="num">${t.opens} فتحة · ${stDur(t.secs)}${t.meetings?' · 📅 '+t.meetings:''}</em></div>`).join('')}</div>`:'<div class="hint">ما أكو مشاهدات بعد — ابعث أول رابط من داخل أي دراسة «🔗 رابط للجهة».</div>'}</div>`;
+    ${(D.top||[]).length?`<div class="st-topl">${D.top.map(t=>`<div class="st-topr" data-stopen="${t.id}">
+      <div class="tr1"><b>${esc(t.title)}</b><span class="st-tag ${t.status}">${esc(ST_STATUS[t.status]||t.status)}</span></div>
+      ${t.recipient||t.last?`<div class="tr2">${esc(t.recipient||'')}${t.recipient&&t.last?' · ':''}${t.last?'آخر مشاهدة '+esc(stAgo(t.last)):''}</div>`:''}
+      <div class="st-stats"><span>${si('eye')}${t.opens} فتحة</span><span>${si('clock')}${stDur(t.secs)}</span>${t.meetings?`<span class="hot">${si('cal')}${t.meetings} طلب اجتماع</span>`:''}</div></div>`).join('')}</div>`
+    :`<div class="hint">ما أكو مشاهدات بعد — ابعث أول رابط من داخل أي دراسة «${si('link')} رابط للجهة».</div>`}</div>`;
 }
 async function stDashLoad(){
   ST.dash=null; if(tab==='study') stPaint();
@@ -17917,7 +17989,7 @@ async function stDashLoad(){
 function stBriefOpen(){
   const w=document.createElement('div'); w.className='st-modal'; w.id='st-brief';
   w.innerHTML=`<div class="st-mbox" style="max-width:560px;width:100%">
-    <h3 style="margin:0 0 6px">✦ دراسة كاملة من سطرين</h3>
+    <h3 style="margin:0 0 6px">${si('spark')} دراسة كاملة من سطرين</h3>
     <div class="hint" style="margin:0 0 10px">اكتب اللي تعرفه عن المشروع بسطرين أو ثلاثة — الذكاء يرتّبها حقائق ويكتب كل الأقسام. اللي ناقص يتركه فراغ [رقم: …] حتى تكمّله، وما يخترع أرقام.</div>
     <label>نوع الدراسة</label><div class="opts" id="br-kind">${['res','com','inv'].map((k,i)=>`<button class="opt ${i?'':'sel'}" data-brk="${k}">${ST_KIND[k]}</button>`).join('')}</div>
     <label>عن المشروع</label>
@@ -18137,7 +18209,7 @@ function stMechEditor(ctx){
       <div><label>آلية الدفع</label><input class="field" data-mk="${ctx}:${i}:n" value="${esc(m.n||'')}" placeholder="مثلاً: نصف كاش + ثلاث دفعات"></div>
       <div><label>اسمها المختصر</label><input class="field" data-mk="${ctx}:${i}:short" value="${esc(m.short||'')}" placeholder="نصف الكاش"></div>
       <div><label>خصمها %</label><input class="field num" data-mk="${ctx}:${i}:pub" value="${esc(m.pub??'')}" inputmode="decimal"></div>
-      <div style="align-self:end;display:flex;gap:2px"><button class="st-ic" data-mup="${ctx}:${i}" title="فوق" ${i?'':'disabled'}>↑</button><button class="st-ic" data-mdel="${ctx}:${i}" title="حذف الآلية" style="color:var(--coral)">✕</button></div></div>
+      <div style="align-self:end;display:flex;gap:2px"><button class="st-ic" data-mup="${ctx}:${i}" title="فوق" ${i?'':'disabled'}>${si('up')}</button><button class="st-ic" data-mdel="${ctx}:${i}" title="حذف الآلية" style="color:var(--coral)">${si('x')}</button></div></div>
     <div class="st-g2"><div><label>الخصم يطبّق على</label><select class="field" data-mk="${ctx}:${i}:disc">
         <option value="price" ${m.disc!=='last'?'selected':''}>السعر — والدفعات تنحسب بعد الخصم</option>
         <option value="last" ${m.disc==='last'?'selected':''}>الدفعات الأخيرة — والمقدّمة تبقى كما هي</option></select></div>
@@ -18186,8 +18258,8 @@ function stMechBind(box){
 function stPriceHTML(){
   const P=ST.pp||{}, projs=(PROJECTS||[]).filter(p=>p.is_active!==false);
   const U=P.units||[];
-  return `<div class="sec"><h2>💰 الأسعار وآليات الدفع</h2><em>${P.proj?esc(P.proj.name):''}</em></div>
-  <div class="st-top"><button class="st-b sm" id="st-back">→ الدراسات</button></div>
+  return `<div class="sec"><h2>الأسعار وآليات الدفع</h2><em>${P.proj?esc(P.proj.name):''}</em></div>
+  <div class="st-top"><button class="st-b sm" id="st-back">${si('back')}الدراسات</button></div>
   <div class="opts" style="margin-bottom:10px">${projs.map(p=>`<button class="opt ${P.slug===p.slug?'sel':''}" data-ppproj="${esc(p.slug)}">${esc(p.name)}</button>`).join('')||'<span class="hint">ما أكو مشاريع</span>'}</div>
   ${P.err?`<div class="fit miss"><i>ما انقرت</i><span class="line">${esc(P.err)}</span></div>`:''}
   ${!P.slug?'<div class="st-empty">اختار مشروع</div>':!P.loaded?'<div class="spin">جاري التحميل…</div>':`
