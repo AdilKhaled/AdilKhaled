@@ -10379,6 +10379,7 @@ function bindNotifDrop(){
     }
     else if(n && COM_NT.test(n.title||'') && COM_ON){ await notifPrep(); await goComNotif(n); }
     else if(n && /^📅 طلب اجتماع/.test(n.title||'')){ await notifPrep(); await goMeetingNotif(n); }
+    else if(n && /^👀 فتحوا الدراسة/.test(n.title||'')){ await notifPrep(); if(!(await goStudyOpenNotif(n))) openNotifDetail(n); }   // فتح الرابط: لوحة نتائج الدراسات
     else if(n && (TASK_NT.test(n.title||'') || kind==='task') && !leadId){ await notifPrep(); await goTaskNotif(n); }   // التجاري: البوابة أو الفرصة نفسها
     else if(leadId && LEADS.some(l=>l.id===leadId)){ openSheet(leadId); }
     else if(n && await notifGo(n)){ }      // يودّيك للقسم المعني
@@ -10416,6 +10417,17 @@ async function notifGoSec(k, title, pre){
   const el=notifSec(title);
   if(!el && k==='inbox') toast('هذا الطلب انحسم من قبل — ما أكو شي ينتظر قرارك بيه');
   notifFlash(el);
+  return true;
+}
+// «👀 فتحوا الدراسة: …» → تبويب الدراسات على لوحة النتائج، ويومض على الدراسة نفسها بقائمة الأكثر مشاهدة
+async function goStudyOpenNotif(n){
+  if(!notifTab('study')) return false;
+  ST.view='dash'; window.scrollTo(0,0);
+  await stDashLoad();
+  const t=n.title||'', at=t.indexOf(': '), ttl=at>=0?t.slice(at+2).trim():'';
+  await nWait(60);
+  const row=[...document.querySelectorAll('#view [data-stopen]')].find(el=>((el.querySelector('b')||{}).textContent||'').trim()===ttl);
+  if(row) notifFlash(row);
   return true;
 }
 async function goMeetingNotif(n){
