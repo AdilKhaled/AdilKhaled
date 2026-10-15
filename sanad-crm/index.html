@@ -2071,6 +2071,15 @@ body.agr-on{overflow:hidden}
 .st-acc em{font-style:normal;font-size:12px;color:var(--dim)}
 .st-busy{position:fixed;inset:0;z-index:2147483200;background:var(--scrim);display:grid;place-items:center}
 .st-busy div{background:var(--raised);border-radius:14px;padding:18px 24px;font-size:14.5px;box-shadow:var(--shadow-lg)}
+/* مؤشر الانتظار وقت تجهيز الـPDF — فوق كل شي حتى فوق المعاينة */
+.pdfbusy{position:fixed;inset:0;z-index:2147483550;background:rgba(20,17,14,.72);display:grid;place-items:center;padding:20px}
+.pdfbusy>div{width:min(100%,360px);background:var(--raised);color:var(--text);border-radius:16px;padding:20px 22px;box-shadow:var(--shadow-lg);text-align:center}
+.pdfbusy .pb-ring{width:34px;height:34px;margin:0 auto 12px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:pb-rot .9s linear infinite}
+@keyframes pb-rot{to{transform:rotate(360deg)}}
+.pdfbusy b{display:block;font-size:15px;font-weight:700}
+.pdfbusy span{display:block;font-size:12.5px;color:var(--muted);margin-top:4px;min-height:1.4em}
+.pdfbusy .pb-bar{height:6px;border-radius:3px;background:var(--line-soft);margin-top:14px;overflow:hidden}
+.pdfbusy .pb-bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:3px;transition:width .25s}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -3560,6 +3569,30 @@ function aiReportSections(r, incl){
 // الورق أبيض نظيف — ونقشة سند بس على الشريط الغامق فوق (الغلاف) والشريط الغامق تحت بكل صفحة.
 // وبعدين تنزيل مباشر بضغطة وحدة — والمعاينة بالصفحات نفسها لو انطلبت (meta.preview) أو لو الجهاز يحتاج ضغطة للمشاركة.
 const PDF_BAR={ bg:'#221E1A', pat:'#C9A055', op:0.16, ink:'#D9CCB4', h:24 };
+// مؤشر الانتظار وقت تجهيز الـPDF — بالجوال التجهيز ياخذ وقت، فلازم المستخدم يشوف إن الشغل ماشي ووين وصل
+const pdfBusy={
+  el:null,
+  show(title, sub){
+    if(!this.el){
+      this.el=document.createElement('div'); this.el.className='pdfbusy'; this.el.setAttribute('role','status'); this.el.setAttribute('aria-live','polite');
+      this.el.innerHTML='<div><div class="pb-ring"></div><b id="pb-t"></b><span id="pb-s"></span><div class="pb-bar"><i id="pb-i"></i></div></div>';
+      document.body.appendChild(this.el);
+    }
+    this.set(title, sub, 0);
+  },
+  set(title, sub, pct){
+    if(!this.el) return;
+    if(title!=null){ const t=this.el.querySelector('#pb-t'); if(t) t.textContent=title; }
+    if(sub!=null){ const s=this.el.querySelector('#pb-s'); if(s) s.textContent=sub; }
+    if(pct!=null){ const i=this.el.querySelector('#pb-i'); if(i) i.style.width=Math.max(0,Math.min(100,Math.round(pct)))+'%'; }
+  },
+  hide(){ if(this.el){ this.el.remove(); this.el=null; } }
+};
+// html2canvas ينسخ الصفحة كلها ويعيد تنسيقها قبل ما يرسم — وهذا اللي كان ياخذ الوقت بالجوال.
+// نخليه يتجاهل كل شي غير العنصر المطلوب (وأجداده، و<head> حتى تبقى التنسيقات والخطوط).
+const h2cIgnore = root => el => !(el===root || root.contains(el) || el.contains(root) || el===document.head || document.head.contains(el));
+// نفسح للشاشة ترسم المؤشر بين الخطوات الثقيلة (الرسم على الكانفس يحجز الصفحة)
+const uiTick = () => new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 const _pdfTiles={};
 async function pdfTile(color, op){            // مربع النقشة كصورة PNG (أضمن ويا html2canvas)
   const k=color+op; if(k in _pdfTiles) return _pdfTiles[k];
@@ -3595,6 +3628,8 @@ function pdfSafeCut(canvas, target, min){
 }
 async function renderPDF(sections, meta){
   meta=meta||{};
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الصفحات');
+  try{
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF(meta.orient||'p','pt','a4');
   const pageW = pdf.internal.pageSize.getWidth(), pageH = pdf.internal.pageSize.getHeight();
@@ -3608,41 +3643,72 @@ async function renderPDF(sections, meta){
     pages.push(c); return x; };
   let ctx=newPage(), y=0;                          // y بالنقاط
 
+  // كل الأقسام بحاوية وحدة: نقيسها مرة وحدة ونرسمها على دفعات — بدل استدعاء html2canvas لكل قسم
+  // (كل استدعاء كان ينسخ الصفحة كلها ويعيد تنسيقها، فعشر أقسام = عشر نسخ من النظام كله)
+  // الحاوية والأغلفة بعرض محتواها: القسم يقدر يطلع أعرض من docW (الحاشية تنضاف لصندوق 760px) —
+  // ومثل قبل، كل قسم ينقاس على عرض الصفحة لحاله
   const holder=document.createElement('div');
-  holder.style.cssText='position:fixed;left:-99999px;top:0;width:'+docW+'px;background:transparent';
+  holder.style.cssText='position:fixed;left:-99999px;top:0;width:max-content;min-width:'+docW+'px;background:transparent';
   document.body.appendChild(holder);
+  const wraps=[];
   try{
     for(const html of sections){
-      holder.innerHTML = html;
-      const el=holder.firstElementChild; if(!el) continue;
+      const w=document.createElement('div'); w.style.cssText='display:flow-root;width:max-content;min-width:'+docW+'px';
+      w.innerHTML=html; const el=w.firstElementChild; if(!el) continue;
+      el.style.margin='0';                         // نفس ما كان: القسم ينرسم بلا هوامشه الخارجية
       // الشريط الغامق فوق (غلاف التقرير): نقشة سند ذهبية خفيفة
       if(tile) el.querySelectorAll('.ar-band,.pdf-band').forEach(b=>{ b.style.backgroundImage=`url(${tile.url})`; b.style.backgroundSize='131.6px 76px'; b.style.backgroundRepeat='repeat'; });
-      const canvas = await html2canvas(el, {scale:SC, backgroundColor:null, useCORS:true, logging:false});
-      const k = PW / canvas.width;                 // نفس العرض بالضبط
-      const pxPerPt = canvas.width / pageW;        // بكسل القسم لكل نقطة
-      const hPt = canvas.height / pxPerPt;
-      let rem = usable - y;
-      // يدخل بالباقي من الصفحة؟ نحطه كامل
-      if(hPt <= rem){ ctx.drawImage(canvas, 0, Math.round(y*ppt), PW, Math.round(canvas.height*k)); y += hPt + 6; continue; }
-      // قسم قصير والمكان الباقي قليل: ينتقل كامل للصفحة الجاية (ما نقطع شي صغير)
-      if(hPt <= usable && (rem < usable*0.35 || hPt < 160)){ ctx=newPage(); y=0;
-        ctx.drawImage(canvas, 0, 0, PW, Math.round(canvas.height*k)); y = hPt + 6; continue; }
-      // غير هيج: يكمل بنفس الصفحة ويتقسم على الصفحات — والقص بفراغ بين سطرين أو صفّين، مو بنص كلام
-      let offset = 0;
-      while(offset < canvas.height){
-        rem = usable - y;
-        // ما نخلي عنوان القسم وحده بآخر الصفحة: أول قطعة لازم بيها مكان كافي
-        if(rem < 60 || (offset===0 && rem < 150)){ ctx=newPage(); y=0; rem=usable; }
-        const room = Math.floor(rem * pxPerPt), left = canvas.height - offset;
-        if(left <= room){ ctx.drawImage(canvas, 0, offset, canvas.width, left, 0, Math.round(y*ppt), PW, Math.round(left*k)); y += left/pxPerPt + 6; break; }
-        let cut = pdfSafeCut(canvas, offset + room, offset + Math.floor(room*0.55));
-        if(cut <= offset + 20) cut = offset + room;
-        ctx.drawImage(canvas, 0, offset, canvas.width, cut-offset, 0, Math.round(y*ppt), PW, Math.round((cut-offset)*k));
-        offset = cut; ctx=newPage(); y=0;
+      holder.appendChild(w); wraps.push(w);
+    }
+    try{ await document.fonts.ready; }catch(e){}
+    await uiTick();
+    // دفعات: ارتفاع الدفعة ما يتعدى ~3800px حتى ما تكبر اللوحة على الجوال (سفاري يحدّ حجم الكانفس)
+    const MAXH=3800, chunks=[]; let cur=[], curH=0;
+    for(const w of wraps){ const h=w.offsetHeight; if(cur.length && curH+h>MAXH){ chunks.push(cur); cur=[]; curH=0; } cur.push(w); curH+=h; }
+    if(cur.length) chunks.push(cur);
+    let done=0;
+    for(const chunk of chunks){
+      pdfBusy.set(null, 'رسم القسم '+(done+1)+' من '+wraps.length, 5 + done/wraps.length*75);
+      await uiTick();
+      const ch=document.createElement('div'); ch.style.cssText='position:fixed;left:-99999px;top:0;width:max-content;min-width:'+docW+'px;background:transparent';
+      chunk.forEach(w=>ch.appendChild(w)); document.body.appendChild(ch);
+      let canvas, segs;
+      try{
+        canvas = await html2canvas(ch, {scale:SC, backgroundColor:null, useCORS:true, logging:false, ignoreElements:h2cIgnore(ch)});
+        // حدود كل قسم داخل لوحة الدفعة (بالعرض والطول — القسم الأضيق يبدأ من اليمين لأن الصفحة RTL)
+        segs = chunk.map(w=>({ x0:Math.round(w.offsetLeft*SC), sw:Math.max(1, Math.round(w.offsetWidth*SC)),
+          y0:Math.round(w.offsetTop*SC), y1:Math.min(canvas.height, Math.round((w.offsetTop+w.offsetHeight)*SC)) }));
+      } finally { ch.remove(); }
+      for(const seg of segs){
+        const secH = seg.y1 - seg.y0; if(secH<=0) continue;
+        const k = PW / seg.sw;                       // القسم يملي عرض الصفحة بالضبط
+        const pxPerPt = seg.sw / pageW;              // بكسل القسم لكل نقطة
+        const hPt = secH / pxPerPt;
+        let rem = usable - y;
+        // يدخل بالباقي من الصفحة؟ نحطه كامل
+        if(hPt <= rem){ ctx.drawImage(canvas, seg.x0, seg.y0, seg.sw, secH, 0, Math.round(y*ppt), PW, Math.round(secH*k)); y += hPt + 6; continue; }
+        // قسم قصير والمكان الباقي قليل: ينتقل كامل للصفحة الجاية (ما نقطع شي صغير)
+        if(hPt <= usable && (rem < usable*0.35 || hPt < 160)){ ctx=newPage(); y=0;
+          ctx.drawImage(canvas, seg.x0, seg.y0, seg.sw, secH, 0, 0, PW, Math.round(secH*k)); y = hPt + 6; continue; }
+        // غير هيج: يكمل بنفس الصفحة ويتقسم على الصفحات — والقص بفراغ بين سطرين أو صفّين، مو بنص كلام
+        let offset = seg.y0;
+        while(offset < seg.y1){
+          rem = usable - y;
+          // ما نخلي عنوان القسم وحده بآخر الصفحة: أول قطعة لازم بيها مكان كافي
+          if(rem < 60 || (offset===seg.y0 && rem < 150)){ ctx=newPage(); y=0; rem=usable; }
+          const room = Math.floor(rem * pxPerPt), left = seg.y1 - offset;
+          if(left <= room){ ctx.drawImage(canvas, seg.x0, offset, seg.sw, left, 0, Math.round(y*ppt), PW, Math.round(left*k)); y += left/pxPerPt + 6; break; }
+          let cut = pdfSafeCut(canvas, offset + room, offset + Math.floor(room*0.55));
+          if(cut <= offset + 20) cut = offset + room;
+          ctx.drawImage(canvas, seg.x0, offset, seg.sw, cut-offset, 0, Math.round(y*ppt), PW, Math.round((cut-offset)*k));
+          offset = cut; ctx=newPage(); y=0;
+        }
       }
+      done+=chunk.length;
     }
   } finally { holder.remove(); }
 
+  pdfBusy.set(null, 'تجميع الصفحات…', 82); await uiTick();
   // الشريط الغامق تحت بكل صفحة: نقشة سند + رقم الصفحة (أرقام لاتينية حتى تطلع صح بكل قارئ)
   const n=pages.length, dt=today(), bh=Math.round(PDF_BAR.h*ppt);
   pages.forEach((c,i)=>{ const x=c.getContext('2d');
@@ -3651,18 +3717,28 @@ async function renderPDF(sections, meta){
     x.fillStyle='#C9A055'; x.fillRect(0, PH-bh, PW, Math.max(2, Math.round(1.2*ppt)));
     x.fillStyle=PDF_BAR.ink; x.font=`${Math.round(8.5*ppt)}px Tajawal, sans-serif`; x.textAlign='center'; x.textBaseline='middle'; x.direction='ltr';
     x.fillText(`Sanad Real Estate  ·  ${i+1} / ${n}  ·  ${dt}`, PW/2, PH-bh/2); });
-  pages.forEach((c,i)=>{ if(i) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg',0.9),'JPEG',0,0,pageW,pageH); });
+  // صورة وحدة لكل صفحة — تنحط بالملف وتنعرض بالمعاينة نفسها (بدل ضغط كل صفحة مرتين)
+  const urls=[];
+  for(let i=0;i<n;i++){
+    pdfBusy.set(null, 'ضغط الصفحة '+(i+1)+' من '+n, 82 + (i+1)/n*16);
+    urls.push(pages[i].toDataURL('image/jpeg',0.9));
+    if(i) pdf.addPage();
+    pdf.addImage(urls[i],'JPEG',0,0,pageW,pageH);
+    if(i%2===1) await uiTick();
+  }
   const name=(meta.file||'سند-تقرير')+'-'+dt+'.pdf';
   const blob=pdf.output('blob');
+  pdfBusy.hide();
   // الافتراضي: تنزيل مباشر بضغطة وحدة. المعاينة بس لو انطلبت (meta.preview) أو لو الجهاز يحتاج ضغطة
   // للمشاركة (سند المثبّت بالآيفون) — فزر المعاينة هو الضغطة اللي تفتح نظام المشاركة.
   const wantPreview = !!meta.preview || (!DIRECT_DL_OK && !meta.direct && !window.__PDF_DIRECT);
   if(!wantPreview) return saveBlob(blob, name)==='dl' ? 'saved' : 'pending';
-  pdfPreview(pages, blob, name, meta);
+  pdfPreview(pages, blob, name, meta, urls);
   return 'preview';
+  } finally { pdfBusy.hide(); }
 }
 // معاينة قبل التنزيل: نفس الصفحات بالضبط، وتنزيل أو مشاركة
-function pdfPreview(pages, blob, name, meta){
+function pdfPreview(pages, blob, name, meta, urls){
   closePdfPreview(true);
   const ov=document.createElement('div'); ov.id='pdfv'; ov.className='pdfv'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','معاينة الـ PDF');
   const canShare=!!(navigator.canShare && (()=>{ try{ return navigator.canShare({ files:[new File([blob], name, {type:'application/pdf'})] }); }catch(e){ return false; } })());
@@ -3673,7 +3749,7 @@ function pdfPreview(pages, blob, name, meta){
       ${canShare&&DIRECT_DL_OK?`<button type="button" class="pdfv-b" id="pdfv-share">↗ مشاركة</button>`:''}
       <button type="button" class="pdfv-b pri" id="pdfv-dl">${DIRECT_DL_OK?'⬇ تنزيل':'↗ حفظ / مشاركة'}</button>
     </div>
-    <div class="pdfv-pages">${pages.map((c,i)=>`<figure class="pdfv-pg ${meta.orient==='l'?'l':''}"><img alt="صفحة ${i+1}" src="${c.toDataURL('image/jpeg',0.82)}"><figcaption>${i+1} / ${pages.length}</figcaption></figure>`).join('')}</div>`;
+    <div class="pdfv-pages">${pages.map((c,i)=>`<figure class="pdfv-pg ${meta.orient==='l'?'l':''}"><img alt="صفحة ${i+1}" src="${(urls&&urls[i])||c.toDataURL('image/jpeg',0.82)}"><figcaption>${i+1} / ${pages.length}</figcaption></figure>`).join('')}</div>`;
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('open'));
   $('#pdfv-x').onclick=()=>closePdfPreview();
@@ -3690,7 +3766,7 @@ function closePdfPreview(silent){
 let PDF_BUSY=false;   // ضغطتين بسرعة على زر PDF ما تطلّع ملفين
 async function downloadDataReportPDF(R, o){
   if(PDF_BUSY) return; PDF_BUSY=true;
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const logo = await logoDataURL();
     const th = chartTheme();
@@ -3708,10 +3784,10 @@ async function downloadDataReportPDF(R, o){
   }catch(e){
     console.error('PDF export failed:', e);
     toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad');
-  }finally{ PDF_BUSY=false; }
+  }finally{ PDF_BUSY=false; pdfBusy.hide(); }
 }
 async function downloadReportPDF(r, includeSuggestions){
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const logo = await logoDataURL();
     const title = String(r.scope||'').startsWith('company') ? 'تقرير الشركة' : 'تقريرك';
@@ -3720,7 +3796,7 @@ async function downloadReportPDF(r, includeSuggestions){
   }catch(e){
     console.error('PDF export failed:', e);
     toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad');
-  }
+  }finally{ pdfBusy.hide(); }
 }
 // طباعة مباشرة: النص يبقى نص — يقدر ينبحث وينسخ، وحجم الملف أصغر
 function printReport(sections, title, sub){
@@ -4566,7 +4642,7 @@ async function fetchARepAI(R){
 async function arepPDF(){
   if(!AREP) return;
   const { R, ai, state, logo } = AREP;
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const cfg = arepCharts(R), imgs = {};
     for(const [key, c] of Object.entries(cfg)){
@@ -4579,6 +4655,7 @@ async function arepPDF(){
       .map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
     if((await renderPDF(secs, {file:'سند-'+R.title.replace(/\s+/g,'-')}))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF export failed:', e); toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad'); }
+  finally{ pdfBusy.hide(); }
 }
 async function arepPrint(){
   if(!AREP) return;
@@ -7131,10 +7208,13 @@ function xSections(X, mode, logo){
   return out;
 }
 async function xPDF(X){
-  toast('جاري تجهيز الـ PDF…');
-  const logo = await logoDataURL().catch(()=> '');
-  const secs = xSections(X, 'pdf', logo).map(s=>`<div class="ar-doc ar-pdf xd" style="width:1120px">${s}</div>`);
-  if((await renderPDF(secs, { file:'سند-'+X.ds.t.replace(/[—\s]+/g,'-'), orient:'l', w:1120 }))==='saved') toast('انحفظ الـ PDF','gold');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
+  try{
+    const logo = await logoDataURL().catch(()=> '');
+    const secs = xSections(X, 'pdf', logo).map(s=>`<div class="ar-doc ar-pdf xd" style="width:1120px">${s}</div>`);
+    if((await renderPDF(secs, { file:'سند-'+X.ds.t.replace(/[—\s]+/g,'-'), orient:'l', w:1120 }))==='saved') toast('انحفظ الـ PDF','gold');
+  }catch(e){ console.error('PDF export failed:', e); toast('ما قدرنا نطلّع الـ PDF — جرّب الطباعة','bad'); }
+  finally{ pdfBusy.hide(); }
 }
 async function xPrint(X){
   const logo = await logoDataURL().catch(()=> '');
@@ -7573,7 +7653,7 @@ async function insPDF(R, mode){
   if(!R) return;
   const brief = mode==='brief';
   const b=$('#ins-pdf'); if(b){ b.disabled=true; b.textContent='جاري…'; }
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const logo=await logoDataURL().catch(()=>'');
     const T=R.themes.filter(t=>t.lost||t.prev);
@@ -7602,7 +7682,7 @@ async function insPDF(R, mode){
     const secs=[cover, ...body].map(x=>`<div class="ar-doc ar-pdf">${x}</div>`);
     if((await renderPDF(secs, { file:'سند-تحليل-الأسباب-'+(brief?'مختصر-':'كامل-')+String(R.rg.label+'-'+R.scope).replace(/[\s·/]+/g,'-') }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('ins PDF failed:', e); toast('ما قدرنا نطلّع الـ PDF','bad'); }
-  finally{ const b2=$('#ins-pdf'); if(b2){ b2.disabled=false; b2.textContent='⬇ PDF'; } }
+  finally{ pdfBusy.hide(); const b2=$('#ins-pdf'); if(b2){ b2.disabled=false; b2.textContent='⬇ PDF'; } }
 }
 const INS_AI_CACHE = {};
 const insAiKey = R => [R.f.period, R.f.project, R.f.agent, ymd(new Date()), R.per.length, R.lostC.length].join('|');
@@ -10868,12 +10948,13 @@ async function prtImgs(R){
 }
 async function prtPDF(){
   if(!PRT||PRT.state!=='ok') return;
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const imgs=await prtImgs(PRT.R);
     const secs=prtSecs(PRT.R,'pdf',imgs).map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
     if((await renderPDF(secs, { file:'سند-تقرير-'+(PRT.company||'المشروع').replace(/\s+/g,'-') }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF', e); toast('ما قدرنا نطلّع الـ PDF — جرّب الطباعة','bad'); }
+  finally{ pdfBusy.hide(); }
 }
 function prtPrint(){
   if(!PRT||PRT.state!=='ok') return;
@@ -12664,7 +12745,7 @@ async function inlineImgs(root){
   }));
 }
 async function snapPage(el){
-  const opt={ scale:2, backgroundColor:'#ffffff', useCORS:true, allowTaint:false, logging:false, imageTimeout:15000 };
+  const opt={ scale:2, backgroundColor:'#ffffff', useCORS:true, allowTaint:false, logging:false, imageTimeout:15000, ignoreElements:h2cIgnore(el) };
   let cv=await html2canvas(el, opt);
   try{ return cv.toDataURL('image/jpeg',0.9); }
   catch(e){
@@ -14452,12 +14533,13 @@ async function crImgs(R){
 async function crPDF(){
   if(!CREP) return;
   const { R, ai, logo } = CREP, state=CREP.state==='ok'?'ok':'fail';
-  toast('جاري تجهيز الـ PDF…');
+  pdfBusy.show('جاري تجهيز الـ PDF…','تجهيز الرسوم والبيانات');
   try{
     const imgs=await crImgs(R);
     const secs=crSections(Object.assign({}, R, {_pdf:true}), ai, state, 'pdf', imgs, logo).map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
     if((await renderPDF(secs, { file:'سند-تقرير-التجاري-'+ymd(new Date()) }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF', e); toast('ما قدرنا نطلّع الـ PDF — جرّب الطباعة','bad'); }
+  finally{ pdfBusy.hide(); }
 }
 async function crPrint(){
   if(!CREP) return;
