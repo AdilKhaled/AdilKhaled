@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>سند العقارية — نظام المبيعات</title>
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADUklEQVR42t2XTWhcVRTHf/e+N/PevJnMmziTj05tGtMaEqhIjA6N4kKwRttaFVx1oSJiRFBXunQlbkRQXOjGraAWQVyIG4tRlIIFtSZipZSMkoZqx0wmL2++7r0u3iQ1oTaJTibggbd5XM75nf859+MIrmHJ/LBhByyYPy82/hOdCHw9ENnp4BtjyU4H3wgh2WUTu5H9321bCohW67hxyTvP7efIWDpyIjsAIET0dXkWrzy2l5v6HF54uI/CcBJjrsLtGIAlBVrDxEiS2w56TL01x4X5Gk8/0IMxIP8lgdxq9k1lyCQt0p6FMXCp1KC03KShDJ4jUdrsDMBqYiP7XF4+mUe35I7HBLYlWA4VJw5nOHlPdt36tgFYMvL45H05Bvsdag2N1qC1wRhQLaCnJnNk0/a2ITYFUK1AlhSsVDVuXCIlKA2JuCDlSurNq2u22w/2pieWKxnocWgoQ863ubLU5IPpEsYYPv12ib5uG9+zEAJ6fZtEXDB3uY4QYEwbFHj1iRt5aCLDT8UqH35Z4uJCjdGBBKmExYG8w3KomS2G/PZHnR7f5s1nBhjsc9pXggN7HM7+EnBxoUbKtbj7UBf93THKgWJ4r8uxgo/nWMzMhcwUq5QDxeGR5Jay31IJXju1wJGxNBOjKcqB4qV3f6Va1zgxQb2hWVSGfDbG5LjPJ2fKfP79EtM/VtpXghcf7eeWQY/Liw0qoeJg3uXZ471YUqA0WBIarSZMuZLH780x1O+0T4FKqJk+V8H3LMZv9nDiMtp+2qxtt9VjWpko6z03xNrXA8+/XeS901dIunItq9WAWhuEEGsgYU1jDGznUNxUgTem9vHZ2TKZlEW1oanVdUQuBEIImtoQ1g1aw/GCj5RQDlT7AD7+ZpGpoz1A5PjWIQ9jIKhqgqoin3UZG0ogJdx/u8/pHyp8Pbvc3gdJLm3zyF3dPFjIkEpEVXv9owUmx30O7U8AcObngPenS3x3YSXKzBI0lfnvAFKCjlQn22VztOBz7A6f3kzUaF+cq3Dqqz+ZmQvX3QMp16ISqvYoIERU89UrN+1Z3Dmaovh7ndliuK4xTWsneI5kpab/Z2/CHQG41rjUKQvmz4vdV+CfhsZOzYfyepNrJ4ZTsdvj+V/DNk7hrmbMowAAAABJRU5ErkJggg==">
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
@@ -75,6 +75,9 @@
 .skeleton{animation:skeleton-pulse 1.5s infinite ease-in-out; border-radius:4px}
 .pill{animation:notif-pulse 2s infinite !important; border-radius:12px; display:grid; place-items:center}
 * { transition: background-color .2s ease, border-color .2s ease, transform .1s cubic-bezier(0.4,0,0.2,1); }
+/* تجربة تطبيق بالتلفون: بلا تكبير بالقرص ولا بالنقر المزدوج، وبلا سحب لتحديث الصفحة */
+html,body{touch-action:pan-x pan-y;overscroll-behavior-y:none;-webkit-text-size-adjust:100%}
+@media (pointer:coarse){ input,select,textarea{font-size:16px !important} }   /* الآيفون يكبّر الشاشة لو خط الخانة أصغر من ١٦ */
 html,body{margin:0;padding:0}
 body{background:var(--base);color:var(--text);font-family:'Tajawal',system-ui,sans-serif;
   font-size:15px;line-height:1.6; -webkit-font-smoothing:antialiased;
@@ -16971,9 +16974,21 @@ async function pushDisable(){
   await s.unsubscribe();
 }
 // بعد الدخول: إذا الجهاز مشترك، نحدّث اشتراكه بالقاعدة بصمت (الاشتراك أحياناً يتبدّل)
+// بعد الدخول: الاشتراك يطيح أحياناً بصمت (تحديث كروم · مسح البيانات · تبديل المفتاح) — نرجّعه ونحفظه
+// بالقاعدة بلا ما يحس المستخدم، حتى تبقى الإشعارات توصل والتطبيق مسكّر
 async function pushSync(){
   try{ if(!pushSupported() || Notification.permission!=='granted') return;
-    const r=await navigator.serviceWorker.getRegistration('/'); const s=r&&await r.pushManager.getSubscription(); if(s) await pushSave(s); }catch(e){}
+    const reg=(await navigator.serviceWorker.getRegistration('/')) || (await pushReg());
+    let s=await reg.pushManager.getSubscription();
+    const k=await fetch(PUSH_FN()).then(r=>r.json()).catch(()=>null);
+    if(k && k.key){
+      const want=b64u(k.key);
+      if(s){ try{ const a=new Uint8Array(s.options.applicationServerKey||[]);
+        if(a.length && !(a.length===want.length && a.every((x,i)=>x===want[i]))){ await s.unsubscribe(); s=null; } }catch(e){} }
+      if(!s) s=await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:want });
+    }
+    if(s) await pushSave(s);
+  }catch(e){ console.warn('pushSync', e); }
 }
 async function pushForget(){
   try{ const r=await navigator.serviceWorker.getRegistration('/'); const s=r&&await r.pushManager.getSubscription(); if(s) await sb.rpc('push_unsubscribe',{ p_endpoint:s.endpoint }); }catch(e){}
@@ -16986,11 +17001,15 @@ function sndCard(){
     : P.perm==='denied' ? '<span class="hint" style="color:var(--coral)">الإشعارات ممنوعة لهذا الموقع — فعّلها من إعدادات المتصفح وارجع.</span>'
     : P.on ? `<span class="snd-ok">● مفعّلة على هذا الجهاز</span><button class="st-b sm" id="push-test" ${PUSH.busy?'disabled':''}>إشعار تجربة</button><button class="st-b sm" id="push-off" ${PUSH.busy?'disabled':''}>إيقاف</button>`
     : `<button class="st-b pri sm" id="push-on" ${PUSH.busy?'disabled':''}>فعّل إشعارات التلفون</button><span class="hint">توصلك الرسائل والمهام والتنبيهات حتى لو النظام مسكّر</span>`;
+  // أندرويد يوقف كروم بالخلفية على بعض الأجهزة (شاومي · هواوي · أوبو) فالإشعار يتأخر أو ما يوصل والتطبيق مسكّر
+  const andHint = P&&P.ok&&P.on&&/Android/i.test(navigator.userAgent)
+    ? `<div class="snd-row"><span>ما توصل والتطبيق مسكّر؟</span><span class="hint">إعدادات التلفون ← التطبيقات ← كروم ← البطارية ← «بلا قيود» — وبشاومي/هواوي فعّل «التشغيل التلقائي» لكروم</span></div>` : '';
   return `<div class="sec" style="margin-top:22px"><h2>الأصوات والإشعارات</h2></div>
   <div class="snd-card">
     ${pwaRow()}
     <div class="snd-row"><span>أصوات داخل النظام</span><button class="opt ${on?'sel':''}" id="snd-tg">${on?'مفعّلة':'مطفية'}</button>${on?'<button class="st-b sm" id="snd-try">اسمع</button>':''}</div>
     <div class="snd-row"><span>إشعارات التلفون</span>${pushLine}</div>
+    ${andHint}
     <div class="snd-row"><span>فيه مشكلة؟</span><button class="st-b sm" id="push-diag">افحص الإشعارات</button></div></div>`;
 }
 // فحص الإشعارات خطوة خطوة — يبين وين المشكلة بالضبط
@@ -17100,8 +17119,18 @@ function pwaBadge(){
     const n=(NOTIFS||[]).filter(x=>!x.read_at && !isMessageNotification(x)).length + (typeof totalUnreadMsgs==='function' ? totalUnreadMsgs() : 0);
     n ? navigator.setAppBadge(n).catch(()=>{}) : navigator.clearAppBadge().catch(()=>{}); }catch(e){}
 }
+// سفاري بالآيفون يتجاهل user-scalable بالمتصفح العادي — نوقف إيماءات القرص بأنفسنا
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t, e=>e.preventDefault(), { passive:false }));
 function pwaBoot(){
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js', { scope:'/' }).catch(()=>{});
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/sw.js', { scope:'/' }).catch(()=>{});
+    // رسائل ملف الإشعارات: الضغط على إشعار والنظام مفتوح · المتصفح بدّل الاشتراك
+    if(!pwaBoot._msg){ pwaBoot._msg=true; navigator.serviceWorker.addEventListener('message', e=>{
+      const m=e.data||{};
+      if(m.type==='push-resub') pushSync();
+      if(m.type==='notif-click'){ try{ const tb=m.data&&m.data.tab; if(!(tb && notifTab(tb)) && ME) openNotifs(); }catch(_){} }
+    }); }
+  }
   // اختصارات الأيقونة: /?tab=tasks
   try{ const q=new URLSearchParams(location.search).get('tab');
     if(q){ const b=document.querySelector(`#nav [data-tab="${q}"]`); if(b) b.click(); history.replaceState(null,'',location.pathname); } }catch(e){}
