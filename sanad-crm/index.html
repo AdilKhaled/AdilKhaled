@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ar" dir="rtl"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,7 +15,13 @@
 <meta name="theme-color" content="#171412" media="(prefers-color-scheme: dark)">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&amp;display=swap" rel="stylesheet">
+<!-- الاتصال بالقاعدة ومستودع المكتبات يبدأ من أول لحظة (DNS + TLS) بدل ما ننتظر أول طلب -->
+<link rel="preconnect" href="https://lavctdyeuacujsqchgwz.supabase.co">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="anonymous">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm" crossorigin="anonymous">
+<!-- ملف الخط ما يوقف رسم الصفحة: ينحمّل بالخلفية ويتفعّل أول ما يوصل (ولحد ما يوصل الخط الافتراضي) -->
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&amp;display=swap" rel="stylesheet"></noscript>
 <style>
 /* ── نظام الألوان: فاتح افتراضي، غامق حسب إعداد الجهاز أو اختيار المستخدم ── */
 :root{
@@ -2082,9 +2089,9 @@ body.agr-on{overflow:hidden}
 .pdfbusy .pb-bar{height:6px;border-radius:3px;background:var(--line-soft);margin-top:14px;overflow:hidden}
 .pdfbusy .pb-bar i{display:block;height:100%;width:0;background:var(--gold);border-radius:3px;transition:width .25s}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -2527,8 +2534,9 @@ async function boot(){
   PROF = prof;
   $('#hdr-name').firstChild.textContent = prof.full_name;
 
+  const agrP = agrCheck().catch(()=>false);          // ما يعتمد على البيانات — يمشي بالتوازي ويوفّر دورة شبكة
   try { await loadAll(); }  catch(e){ return fatal('جلب البيانات', e); }
-  let needAgr=false; try{ needAgr=await agrCheck(); }catch(e){ needAgr=false; }
+  let needAgr=false; try{ needAgr=await agrP; }catch(e){ needAgr=false; }
   try { buildNav(); }       catch(e){ return fatal('بناء التبويبات', e); }
   try { render(); }         catch(e){ return fatal('رسم الشاشة', e); }
   if(needAgr) agrOpen();
@@ -2604,6 +2612,57 @@ async function withRetry(make, tries=3){
 }
 
 async function loadAll(){
+  const errs=[];
+  // كل الطلبات الإضافية (البركة · الفريق · الواصلة · الإعلانات · التجاري · الدراسات…) تنطلق مع الطلبات الأساسية
+  // بنفس اللحظة — مو بعدها. ما تعتمد على نتائجها: الدور معروف من PROF قبل ما نوصل هنا. يوفّر دورة شبكة كاملة بالدخول.
+  const wave2 = Promise.all([
+    (async()=>{
+      if(isAdmin()){
+        const [pool, health, pa, st, ps, un, rp] = await Promise.all([
+          withRetry(()=>sb.from('v_lead_pool').select('*').limit(500)),
+          withRetry(()=>sb.from('v_data_health').select('*')),
+          withRetry(()=>sb.from('v_projects_admin').select('*')),
+          withRetry(()=>sb.from('v_staff_admin').select('*')),
+          withRetry(()=>sb.from('v_pending_staff').select('*')),
+          withRetry(()=>sb.from('v_units_admin').select('*')),
+          withRetry(()=>sb.from('v_replacements').select('*').limit(10))
+        ]);
+        POOL = pool.data || []; HEALTH = health.data || []; PROJADMIN = pa.data || [];
+        STAFF = st.data || []; PENDSTAFF = ps.data || [];
+        if(pool.error)   errs.push('البركة: '+pool.error.message);
+        if(health.error) errs.push('صحة البيانات: '+health.error.message);
+        if(pa.error)     errs.push('المشاريع: '+pa.error.message);
+        if(st.error)     errs.push('الموظفون: '+st.error.message);
+        if(ps.error)     errs.push('بالانتظار: '+ps.error.message);
+        if(un.error)     errs.push('الوحدات: '+un.error.message);
+        if(rp.error)     errs.push('الاستبدالات: '+rp.error.message);
+        UNITS = un.data || []; REPLS = rp.data || [];
+      }
+
+    })(),
+    (async()=>{
+      const [inc, left] = await Promise.all([
+        withRetry(()=>sb.from('v_my_incoming').select('*')),
+        withRetry(()=>sb.rpc('transfers_left'))
+      ]);
+      INCOMING = inc.data || [];
+      TLEFT = (left.data ?? 3);
+      if(inc.error)  errs.push('الواصلة لي: '+inc.error.message);
+      if(left.error) errs.push('رصيد الإرسال: '+left.error.message);
+    })(),
+    (async()=>{
+      if(!isStaff()) return;
+      const rq = await sb.from('v_transfer_requests').select('*');
+      TREQS = rq.data || [];
+      if(rq.error) errs.push('طلبات النقل: '+rq.error.message);
+    })(),
+    sb.rpc('settle_transfers').then(()=>{}, ()=>{}),
+    probeWA().catch(()=>{}),
+    loadAnn(true).catch(()=>{}),
+    loadRes().catch(()=>{}),
+    comProbe().catch(()=>{ COM_ON=false; }),
+    studyProbe().catch(()=>{ STUDY_ON=false; })
+  ]).catch(e=>{ errs.push('طلبات إضافية: '+((e&&e.message)||e)); });   // ما تطلع رفضاً بلا معالج وتوقف الدخول
   const [projs, units, objs, leads, tasks, deals, people, commits, after, lb, myPts, notifs, msgs, msgReads, reports, aiConv, compProf, tgW, tgM, snotes, chans, msgable, dir, myprof] = await Promise.all([
     withRetry(()=>sb.from('projects').select('id, name, slug, commission_rate, is_active')),
     withRetry(()=>sb.from('units').select(`id, model, area_m2, position,
@@ -2647,7 +2706,6 @@ async function loadAll(){
     withRetry(()=>sb.rpc('staff_profile', { p_agent: ME.id }))
   ]);
 
-  const errs=[];
   if(projs.error)  errs.push('المشاريع: '+projs.error.message);
   if(units.error)  errs.push('الوحدات: '+units.error.message);
   if(objs.error)   errs.push('الاعتراضات: '+objs.error.message);
@@ -2722,57 +2780,10 @@ async function loadAll(){
   NAMES = {}; for(const p of TEAM) NAMES[p.id]=p.full_name;
   COMMITS = commits.data || [];
   AFTER   = after.data || [];
-  for(const l of LEADS) l.commits = COMMITS.filter(c=>c.lead_id===l.id);
+  const byLead = new Map(); for(const c of COMMITS){ const a=byLead.get(c.lead_id); if(a) a.push(c); else byLead.set(c.lead_id,[c]); }
+  for(const l of LEADS) l.commits = byLead.get(l.id) || [];
 
-  // كل الطلبات الإضافية سوا بنفس الوقت بدل وحدة ورا وحدة — الدخول يصير أسرع
-  await Promise.all([
-    (async()=>{
-      if(isAdmin()){
-        const [pool, health, pa, st, ps, un, rp] = await Promise.all([
-          withRetry(()=>sb.from('v_lead_pool').select('*').limit(500)),
-          withRetry(()=>sb.from('v_data_health').select('*')),
-          withRetry(()=>sb.from('v_projects_admin').select('*')),
-          withRetry(()=>sb.from('v_staff_admin').select('*')),
-          withRetry(()=>sb.from('v_pending_staff').select('*')),
-          withRetry(()=>sb.from('v_units_admin').select('*')),
-          withRetry(()=>sb.from('v_replacements').select('*').limit(10))
-        ]);
-        POOL = pool.data || []; HEALTH = health.data || []; PROJADMIN = pa.data || [];
-        STAFF = st.data || []; PENDSTAFF = ps.data || [];
-        if(pool.error)   errs.push('البركة: '+pool.error.message);
-        if(health.error) errs.push('صحة البيانات: '+health.error.message);
-        if(pa.error)     errs.push('المشاريع: '+pa.error.message);
-        if(st.error)     errs.push('الموظفون: '+st.error.message);
-        if(ps.error)     errs.push('بالانتظار: '+ps.error.message);
-        if(un.error)     errs.push('الوحدات: '+un.error.message);
-        if(rp.error)     errs.push('الاستبدالات: '+rp.error.message);
-        UNITS = un.data || []; REPLS = rp.data || [];
-      }
-
-    })(),
-    (async()=>{
-      const [inc, left] = await Promise.all([
-        withRetry(()=>sb.from('v_my_incoming').select('*')),
-        withRetry(()=>sb.rpc('transfers_left'))
-      ]);
-      INCOMING = inc.data || [];
-      TLEFT = (left.data ?? 3);
-      if(inc.error)  errs.push('الواصلة لي: '+inc.error.message);
-      if(left.error) errs.push('رصيد الإرسال: '+left.error.message);
-    })(),
-    (async()=>{
-      if(!isStaff()) return;
-      const rq = await sb.from('v_transfer_requests').select('*');
-      TREQS = rq.data || [];
-      if(rq.error) errs.push('طلبات النقل: '+rq.error.message);
-    })(),
-    sb.rpc('settle_transfers').then(()=>{}, ()=>{}),
-    probeWA().catch(()=>{}),
-    loadAnn(true).catch(()=>{}),
-    loadRes().catch(()=>{}),
-    comProbe().catch(()=>{ COM_ON=false; }),
-    studyProbe().catch(()=>{ STUDY_ON=false; })
-  ]);
+  await wave2;   // الموجة الثانية انطلقت من أول اللحظة (فوق) — هنا بس ننتظرها
 
   const dealt = new Set(DEALS.filter(d=>d.status!=='cancelled').map(d=>d.lead_id));
   PENDING = LEADS.filter(l=>l.stage==='won' && !dealt.has(l.id));
