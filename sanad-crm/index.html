@@ -3558,7 +3558,7 @@ function aiReportSections(r, incl){
 
 // يبني الـPDF قسم قسم — ما يقطع سطر ولا جدول بالنص، ويحط رقم الصفحة بكل ورقة
 // الورق أبيض نظيف — ونقشة سند بس على الشريط الغامق فوق (الغلاف) والشريط الغامق تحت بكل صفحة.
-// وبعدين معاينة بالصفحات نفسها، ومنها التنزيل أو المشاركة.
+// وبعدين تنزيل مباشر بضغطة وحدة — والمعاينة بالصفحات نفسها لو انطلبت (meta.preview) أو لو الجهاز يحتاج ضغطة للمشاركة.
 const PDF_BAR={ bg:'#221E1A', pat:'#C9A055', op:0.16, ink:'#D9CCB4', h:24 };
 const _pdfTiles={};
 async function pdfTile(color, op){            // مربع النقشة كصورة PNG (أضمن ويا html2canvas)
@@ -3654,7 +3654,10 @@ async function renderPDF(sections, meta){
   pages.forEach((c,i)=>{ if(i) pdf.addPage(); pdf.addImage(c.toDataURL('image/jpeg',0.9),'JPEG',0,0,pageW,pageH); });
   const name=(meta.file||'سند-تقرير')+'-'+dt+'.pdf';
   const blob=pdf.output('blob');
-  if(window.__PDF_DIRECT || meta.direct){ saveBlob(blob, name); return 'saved'; }
+  // الافتراضي: تنزيل مباشر بضغطة وحدة. المعاينة بس لو انطلبت (meta.preview) أو لو الجهاز يحتاج ضغطة
+  // للمشاركة (سند المثبّت بالآيفون) — فزر المعاينة هو الضغطة اللي تفتح نظام المشاركة.
+  const wantPreview = !!meta.preview || (!DIRECT_DL_OK && !meta.direct && !window.__PDF_DIRECT);
+  if(!wantPreview) return saveBlob(blob, name)==='dl' ? 'saved' : 'pending';
   pdfPreview(pages, blob, name, meta);
   return 'preview';
 }
@@ -3663,18 +3666,19 @@ function pdfPreview(pages, blob, name, meta){
   closePdfPreview(true);
   const ov=document.createElement('div'); ov.id='pdfv'; ov.className='pdfv'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-label','معاينة الـ PDF');
   const canShare=!!(navigator.canShare && (()=>{ try{ return navigator.canShare({ files:[new File([blob], name, {type:'application/pdf'})] }); }catch(e){ return false; } })());
+  // بالأجهزة اللي ما تنزّل مباشرة (سند المثبّت بالآيفون): الزر الرئيسي هو المشاركة نفسها — ضغطة وحدة تفتح «حفظ بالملفات»
   ov.innerHTML=`<div class="pdfv-bar">
       <button type="button" class="pdfv-x" id="pdfv-x" aria-label="رجوع">✕</button>
       <div class="pdfv-t"><b>معاينة الـ PDF</b><span>${esc(name)} · ${pages.length} ${pages.length===1?'صفحة':pages.length<=10?'صفحات':'صفحة'}</span></div>
-      ${canShare?`<button type="button" class="pdfv-b" id="pdfv-share">↗ مشاركة</button>`:''}
-      <button type="button" class="pdfv-b pri" id="pdfv-dl">⬇ تنزيل</button>
+      ${canShare&&DIRECT_DL_OK?`<button type="button" class="pdfv-b" id="pdfv-share">↗ مشاركة</button>`:''}
+      <button type="button" class="pdfv-b pri" id="pdfv-dl">${DIRECT_DL_OK?'⬇ تنزيل':'↗ حفظ / مشاركة'}</button>
     </div>
     <div class="pdfv-pages">${pages.map((c,i)=>`<figure class="pdfv-pg ${meta.orient==='l'?'l':''}"><img alt="صفحة ${i+1}" src="${c.toDataURL('image/jpeg',0.82)}"><figcaption>${i+1} / ${pages.length}</figcaption></figure>`).join('')}</div>`;
   document.body.appendChild(ov);
   requestAnimationFrame(()=>ov.classList.add('open'));
   $('#pdfv-x').onclick=()=>closePdfPreview();
-  $('#pdfv-dl').onclick=()=>{ saveBlob(blob, name); toast('انحفظ الـ PDF','gold'); };
-  const sh=$('#pdfv-share'); if(sh) sh.onclick=async()=>{ try{ await navigator.share({ files:[new File([blob], name, {type:'application/pdf'})], title:name }); }catch(e){} };
+  $('#pdfv-dl').onclick=()=>{ if(saveBlob(blob, name, {gesture:true})==='dl') toast('انحفظ الـ PDF','gold'); };
+  const sh=$('#pdfv-share'); if(sh) sh.onclick=()=>shareOrOpen(blob, name);
   ov._key=e=>{ if(e.key==='Escape') closePdfPreview(); }; document.addEventListener('keydown', ov._key);
 }
 function closePdfPreview(silent){
@@ -3683,7 +3687,9 @@ function closePdfPreview(silent){
   ov.remove();
 }
 
-async function downloadDataReportPDF(R){
+let PDF_BUSY=false;   // ضغطتين بسرعة على زر PDF ما تطلّع ملفين
+async function downloadDataReportPDF(R, o){
+  if(PDF_BUSY) return; PDF_BUSY=true;
   toast('جاري تجهيز الـ PDF…');
   try{
     const logo = await logoDataURL();
@@ -3698,11 +3704,11 @@ async function downloadDataReportPDF(R){
       options:{ scales:{ y:{beginAtZero:true, ticks:{precision:0}} } } }, 680, 240);
     if(funnel) secs.push(pdfBlock(pdfHead('رحلة عملاء الفترة') + `<img src="${funnel}" style="width:100%;border:1px solid ${PDF_LINE};border-radius:8px">`));
     if(trend)  secs.push(pdfBlock(pdfHead('المباع — آخر ٦ أشهر') + `<img src="${trend}" style="width:100%;border:1px solid ${PDF_LINE};border-radius:8px">`));
-    if((await renderPDF(secs, {file:'سند-'+R.title.replace(/\s+/g,'-')}))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, {file:'سند-'+R.title.replace(/\s+/g,'-'), preview:!!(o&&o.preview)}))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){
     console.error('PDF export failed:', e);
     toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad');
-  }
+  }finally{ PDF_BUSY=false; }
 }
 async function downloadReportPDF(r, includeSuggestions){
   toast('جاري تجهيز الـ PDF…');
@@ -3710,7 +3716,7 @@ async function downloadReportPDF(r, includeSuggestions){
     const logo = await logoDataURL();
     const title = String(r.scope||'').startsWith('company') ? 'تقرير الشركة' : 'تقريرك';
     const secs = [pdfCover(title, periodLabel(r.scope)+' · '+r.period, logo), ...aiReportSections(r, includeSuggestions)];
-    if((await renderPDF(secs, {file:'سند-تقرير-'+(r.period||'')}))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, {file:'سند-تقرير-'+(r.period||'')}))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){
     console.error('PDF export failed:', e);
     toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad');
@@ -4126,8 +4132,11 @@ function dataReportHTML(R){
       <b class="num g" style="flex:0 0 76px;text-align:end">${big(r.sales)}</b></div>`).join('')}</div>`:''}
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="save gd" id="rep-pdf" style="flex:1">⬇ PDF</button>
-      <button class="save" id="rep-print" style="flex:1">طباعة</button>
       <button class="save" id="rep-csv" style="flex:1">⬇ Excel</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="save" id="rep-pdfv" style="flex:1">معاينة الـ PDF</button>
+      <button class="save" id="rep-print" style="flex:1">طباعة</button>
     </div>
     <button class="save" id="rep-goai" style="margin-top:8px;width:100%">افتح التقرير التحليلي لنفس الفلتر ←</button>`;
 }
@@ -4136,6 +4145,7 @@ function openDataReport(kindOrF, agentId){
   $('#sheetin').innerHTML = dataReportHTML(R);
   const x=$('#xclose'); if(x) x.onclick=()=>closeSheet();
   const pdf=$('#rep-pdf');   if(pdf)   pdf.onclick=()=>downloadDataReportPDF(R);
+  const pdv=$('#rep-pdfv');  if(pdv)   pdv.onclick=()=>downloadDataReportPDF(R, {preview:true});
   const prn=$('#rep-print'); if(prn)   prn.onclick=()=>printReport(dataReportSections(R), R.title, R.periodTxt);
   const csv=$('#rep-csv');   if(csv)   csv.onclick=()=>xReportExcel(R).catch(e=>toast(e.message||'ما قدرنا نطلّع Excel','bad'));
   const go=$('#rep-goai');   if(go)    go.onclick=()=>{ closeSheet(); setTimeout(()=>openARep(R.f), 50); };
@@ -4567,7 +4577,7 @@ async function arepPDF(){
     const RR = Object.assign({}, R, {_pdf:true});
     const secs = arepSections(RR, ai, state==='loading'?'fail':state, 'pdf', imgs, logo)
       .map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
-    if((await renderPDF(secs, {file:'سند-'+R.title.replace(/\s+/g,'-')}))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, {file:'سند-'+R.title.replace(/\s+/g,'-')}))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF export failed:', e); toast('ما قدرنا نطلّع الـ PDF — جرّب زر الطباعة بدله','bad'); }
 }
 async function arepPrint(){
@@ -7124,7 +7134,7 @@ async function xPDF(X){
   toast('جاري تجهيز الـ PDF…');
   const logo = await logoDataURL().catch(()=> '');
   const secs = xSections(X, 'pdf', logo).map(s=>`<div class="ar-doc ar-pdf xd" style="width:1120px">${s}</div>`);
-  if((await renderPDF(secs, { file:'سند-'+X.ds.t.replace(/[—\s]+/g,'-'), orient:'l', w:1120 }))!=='preview') toast('انحفظ الـ PDF','gold');
+  if((await renderPDF(secs, { file:'سند-'+X.ds.t.replace(/[—\s]+/g,'-'), orient:'l', w:1120 }))==='saved') toast('انحفظ الـ PDF','gold');
 }
 async function xPrint(X){
   const logo = await logoDataURL().catch(()=> '');
@@ -7590,7 +7600,7 @@ async function insPDF(R, mode){
       .replace(/<div class="ar-cap">\+\d+ غيرهم[^<]*<\/div>/g, '');
     const body=insSections(R).map(flat).filter(h=>!(brief && /class="ins-quotes"/.test(h))).map(short);
     const secs=[cover, ...body].map(x=>`<div class="ar-doc ar-pdf">${x}</div>`);
-    if((await renderPDF(secs, { file:'سند-تحليل-الأسباب-'+(brief?'مختصر-':'كامل-')+String(R.rg.label+'-'+R.scope).replace(/[\s·/]+/g,'-') }))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, { file:'سند-تحليل-الأسباب-'+(brief?'مختصر-':'كامل-')+String(R.rg.label+'-'+R.scope).replace(/[\s·/]+/g,'-') }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('ins PDF failed:', e); toast('ما قدرنا نطلّع الـ PDF','bad'); }
   finally{ const b2=$('#ins-pdf'); if(b2){ b2.disabled=false; b2.textContent='⬇ PDF'; } }
 }
@@ -10862,7 +10872,7 @@ async function prtPDF(){
   try{
     const imgs=await prtImgs(PRT.R);
     const secs=prtSecs(PRT.R,'pdf',imgs).map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
-    if((await renderPDF(secs, { file:'سند-تقرير-'+(PRT.company||'المشروع').replace(/\s+/g,'-') }))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, { file:'سند-تقرير-'+(PRT.company||'المشروع').replace(/\s+/g,'-') }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF', e); toast('ما قدرنا نطلّع الـ PDF — جرّب الطباعة','bad'); }
 }
 function prtPrint(){
@@ -11863,25 +11873,44 @@ async function doAdd(){
 const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
 const IS_APP = !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone===true);
 const IN_APPWEB = /FBAN|FBAV|Instagram|WhatsApp|Line\/|Snapchat|TikTok/i.test(navigator.userAgent);
-const needsTapToSave = () => IS_IOS || IS_APP || IN_APPWEB;
+// وين ينفع التنزيل المباشر (رابط download)؟ بكل مكان — إلا سند المثبّت بالآيفون ومتصفحات التطبيقات (واتساب/إنستغرام…)
+// سفاري بالآيفون نفسه ينزّل مباشرة (يسأل «تنزيل؟» ويحفظ بالملفات) — فما نحتاج شريط ولا مشاركة
+const DIRECT_DL_OK = !((IS_IOS && IS_APP) || IN_APPWEB);
+const needsTapToSave = () => !DIRECT_DL_OK;
 function dlBlob(blob, name){
   const url=URL.createObjectURL(blob), a=document.createElement('a');
   a.href=url; a.download=name; a.rel='noopener'; a.style.display='none';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 60000);
 }
+// مشاركة الملف (نظام المشاركة بالجوال: حفظ بالملفات · واتساب · …) وإذا ما توفّر نفتحه بتبويب جديد.
+// لازم تنصير من ضغطة المستخدم نفسها — الآيفون يرفض المشاركة بلا ضغطة.
 async function shareOrOpen(blob, name){
-  try{
-    const f=new File([blob], name, { type:blob.type||'application/octet-stream' });
-    if(navigator.canShare && navigator.canShare({ files:[f] })){ await navigator.share({ files:[f], title:name }); return; }
-  }catch(e){ if(e && e.name==='AbortError') return; }
+  let f=null;
+  try{ f=new File([blob], name, { type:blob.type||'application/octet-stream' }); }catch(e){}
+  if(f && navigator.canShare && navigator.share){
+    let ok=false; try{ ok=navigator.canShare({ files:[f] }); }catch(e){}
+    if(ok){
+      try{ await navigator.share({ files:[f], title:name }); return 'shared'; }
+      catch(e){ if(e && e.name==='AbortError') return 'cancel'; console.warn('المشاركة ما اشتغلت — نفتح الملف بدلها', e); }
+    }
+  }
+  // رابط حقيقي بتبويب جديد أضمن من window.open — وما نبدّل صفحة النظام نفسها أبداً (كانت تضيّع التطبيق)
   const url=URL.createObjectURL(blob);
-  const w=window.open(url,'_blank');
-  if(!w) location.href=url;
+  const a=document.createElement('a'); a.href=url; a.target='_blank'; a.rel='noopener'; a.style.display='none';
+  document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 120000);
+  toast('انفتح الملف بتبويب جديد — احفظه من زر المشاركة','gold');
+  return 'opened';
 }
-function saveBlob(blob, name){
-  if(!needsTapToSave()) return dlBlob(blob, name);
+// نقطة الحفظ الوحيدة لكل الملفات (PDF · Excel · CSV):
+//  · أغلب الأجهزة: تنزيل مباشر بضغطة وحدة (أندرويد والكمبيوتر وسفاري بالآيفون)
+//  · سند المثبّت بالآيفون ومتصفحات التطبيقات: المشاركة — فوراً لو إحنا بضغطة المستخدم (o.gesture)،
+//    وإلا شريط «الملف جاهز» بضغطة وحدة لأن الآيفون يرفض المشاركة بعد التجهيز الطويل
+function saveBlob(blob, name, o){
+  o=o||{};
+  if(DIRECT_DL_OK){ dlBlob(blob, name); return 'dl'; }
+  if(o.gesture){ shareOrOpen(blob, name); return 'share'; }
   let bar=$('#fready'); if(bar) bar.remove();
   bar=document.createElement('div'); bar.id='fready'; bar.className='fready';
   bar.innerHTML=`<div><b>الملف جاهز</b><span>${esc(name)}</span></div>
@@ -11889,6 +11918,7 @@ function saveBlob(blob, name){
   document.body.appendChild(bar);
   bar.querySelector('#fr-save').onclick=()=>{ shareOrOpen(blob, name); bar.remove(); };
   bar.querySelector('#fr-x').onclick=()=>bar.remove();
+  return 'bar';
 }
 
 /* ═══════════ استمارات الحجز ═══════════ */
@@ -12703,7 +12733,7 @@ async function openResView(r){
     box.innerHTML = imgs.map((src,i)=>`<figure class="rsv-p"><img src="${src}" alt="صفحة ${i+1}"><figcaption>صفحة ${i+1} من ${imgs.length}</figcaption></figure>`).join('');
     const name=r.ref+'.pdf';
     $('#rsv-dl').disabled=false; $('#rsv-pr').disabled=false;
-    $('#rsv-dl').onclick=()=>{ const bl=resPdfBlob(imgs); if(IS_APP||IN_APPWEB) shareOrOpen(bl,name); else dlBlob(bl,name); };
+    $('#rsv-dl').onclick=()=>{ saveBlob(resPdfBlob(imgs), name, {gesture:true}); };
     const sh=$('#rsv-sh'); if(sh){ sh.disabled=false; sh.onclick=()=>shareOrOpen(resPdfBlob(imgs), name); }
     $('#rsv-pr').onclick=()=>resPrint(r, imgs);
   }catch(e){
@@ -14426,7 +14456,7 @@ async function crPDF(){
   try{
     const imgs=await crImgs(R);
     const secs=crSections(Object.assign({}, R, {_pdf:true}), ai, state, 'pdf', imgs, logo).map(s=>`<div class="ar-doc ar-pdf">${s}</div>`);
-    if((await renderPDF(secs, { file:'سند-تقرير-التجاري-'+ymd(new Date()) }))!=='preview') toast('انحفظ الـ PDF','gold');
+    if((await renderPDF(secs, { file:'سند-تقرير-التجاري-'+ymd(new Date()) }))==='saved') toast('انحفظ الـ PDF','gold');
   }catch(e){ console.error('PDF', e); toast('ما قدرنا نطلّع الـ PDF — جرّب الطباعة','bad'); }
 }
 async function crPrint(){
