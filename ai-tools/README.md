@@ -303,3 +303,33 @@ ls ~/.claude/skills/design-taste-frontend/SKILL.md
 لا تحتاج تفعيلاً. تعمل تلقائياً عندما تطلب من Claude Code تصميم صفحة أو واجهة. لتأكيد استخدامها اكتب في طلبك: `use the design-taste-frontend skill`.
 
 مهارات أخرى في نفس المستودع تُثبَّت بنفس الأمر مع تغيير الاسم بعد `--skill`: `minimalist-ui`، `industrial-brutalist-ui`، `redesign-existing-projects`، `image-to-code`.
+
+---
+
+## 7. Playwright CLI (تحكم Claude بالمتصفح)
+
+**الفكرة ببساطة:** أداة من Microsoft تتيح لـ Claude Code فتح المتصفح وتصفح المواقع والضغط على الأزرار وتعبئة النماذج وأخذ لقطات شاشة، كل ذلك من الطرفية. مفيدة لاختبار المواقع التي تبنيها أو لأتمتة مهام على الويب.
+
+### التثبيت
+
+```bash
+npm install -g @playwright/cli@latest
+playwright-cli install --skills --global
+```
+
+الأمر الثاني يضيف مهارة `playwright-cli` إلى Claude Code ليعرف كيف يستخدمها.
+
+### التحقق
+
+```bash
+playwright-cli --version
+playwright-cli open https://example.com --headed
+playwright-cli screenshot
+playwright-cli close
+```
+
+إذا ظهر خطأ أن المتصفح غير موجود، ثبّته بـ `npx playwright install chromium`.
+
+### الاستخدام مع Claude Code
+
+اطلب من Claude مثلاً: `افتح موقع example.com وخذ لقطة شاشة`. سيستخدم المهارة تلقائياً. خيار `--headed` يُظهر نافذة المتصفح، وبدونه يعمل في الخلفية.
