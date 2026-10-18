@@ -333,3 +333,24 @@ playwright-cli close
 ### الاستخدام مع Claude Code
 
 اطلب من Claude مثلاً: `افتح موقع example.com وخذ لقطة شاشة`. سيستخدم المهارة تلقائياً. خيار `--headed` يُظهر نافذة المتصفح، وبدونه يعمل في الخلفية.
+
+---
+
+## 8. Agent Skills (مجموعات مهارات جاهزة)
+
+**الفكرة ببساطة:** مستودعات تحوي عشرات المهارات الجاهزة لـ Claude Code تُثبَّت بأمر واحد. أهم مجموعتين:
+
+| المجموعة | المحتوى | الأمر |
+|---|---|---|
+| **anthropics/skills** (الرسمية) | 20 مهارة: Word وExcel وPowerPoint وPDF، تصميم واجهات، اختبار تطبيقات ويب، بناء MCP، إرشادات كتابة | `npx skills add anthropics/skills -g -a claude-code -y` |
+| **vercel-labs/agent-skills** | 9 مهارات لتطوير الويب: React وNext.js، النشر على Vercel، مراجعة تصميم الواجهات | `npx skills add vercel-labs/agent-skills -g -a claude-code -y` |
+
+### التحقق
+
+```bash
+ls ~/.claude/skills/
+```
+
+### الاستخدام
+
+تعمل تلقائياً حسب طلبك. مثلاً: `أنشئ لي ملف Excel فيه جدول مصاريف` يستدعي مهارة xlsx، و`راجع تصميم صفحتي` يستدعي web-design-guidelines.
