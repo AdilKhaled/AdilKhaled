@@ -13152,10 +13152,11 @@ function viewCompete(){
       ${p.points_total!=null?`<div class="pf-earned"><div><span>مجموع نقاطك</span><b class="num">${plain(+p.points_total||0)}</b></div><div><span>هذا الأسبوع</span><b class="num">${plain(+p.points_week||0)}</b></div></div>`:''}</div>
     ${contests.length?`<div class="sec" style="margin-top:22px"><h2>المسابقات الحالية</h2><em>${contests.length}</em></div><div class="ans">${contests.map(annCard).join('')}</div>`:''}
     ${leaderboardBox()}
-    ${MY_POINTS.length?`<div class="sec" style="margin-top:22px"><h2>آخر نقاطك</h2></div>
-      <div class="brk">${MY_POINTS.slice(0,12).map(x=>`<div><span>${esc(ptsLabel(x))}</span><b class="num ${+x.points<0?'':'g'}">${+x.points<0?'':'+'}${plain(+x.points||0)}</b></div>`).join('')}</div>`:''}`;
+    <div class="sec" style="margin-top:22px"><h2>آخر نقاطك</h2><em><button type="button" class="ins-link" id="pts-try">جرّب علامة الفوز</button></em></div>
+    ${MY_POINTS.length?`<div class="brk">${MY_POINTS.slice(0,12).map(x=>`<div><span>${esc(ptsLabel(x))}</span><b class="num ${+x.points<0?'':'g'}">${+x.points<0?'':'+'}${plain(+x.points||0)}</b></div>`).join('')}</div>`
+      :`<div class="hint">ما أكو نقاط مسجّلة إلك بعد — أول ما تيجي نقطة تطلع هنا ويا علامة الفوز.</div>`}`;
 }
-function bindCompete(){ try{ bindAnn(); }catch(e){} }
+function bindCompete(){ try{ bindAnn(); }catch(e){} const t=$('#pts-try'); if(t) t.onclick=()=>ptsWin(5,'تجربة — هيج تطلع لما تزيد نقاطك'); }
 
 /* ═══════════ صندوق القرارات — كل اللي ينتظر قرارك بمكان واحد ═══════════
    نفس الأزرار ونفس الدوال القديمة (النقل · الحجوزات · العقود · التصدير · المهام)،
@@ -16666,6 +16667,7 @@ const PTS_EXACT={ first_response:'سرعة أول رد', first_response_fast:'ر
   stage_up:'تقديم عميل لمرحلة أعلى', stage_advance:'تقديم عميل لمرحلة أعلى', stage_change:'تقديم عميل لمرحلة أعلى', viewing_set:'تحديد موعد معاينة', viewing_done:'معاينة', viewing:'معاينة',
   deal_registered:'تسجيل عقد', deal_paid:'صرف عقد', deal:'عقد', sale:'بيع', won:'بيع', idle_penalty:'خصم: عميل بلا حركة', stale_penalty:'خصم: عميل راكد',
   overdue_penalty:'خصم: موعد متابعة فات', missed_followup:'خصم: موعد متابعة فات', task_done:'إنجاز مهمة', task_completed:'إنجاز مهمة', admin_adjust:'تعديل من الإدارة', manual:'تعديل من الإدارة', adjustment:'تعديل من الإدارة',
+  lead_added:'تسجيل عميل جديد', lead_created:'تسجيل عميل جديد', new_lead:'تسجيل عميل جديد', add_lead:'تسجيل عميل جديد', add_lead_self:'تسجيل عميل جديد',
   call:'مكالمة', visit:'زيارة', note:'ملاحظة', referral:'إحالة', contest_win:'فوز بمسابقة', target_hit:'تحقيق التاركت', study_sent:'إرسال دراسة', study_won:'قبول دراسة', market_add:'إضافة لبنك السوق' };
 const PTS_WORDS={ first:'أول', response:'رد', reply:'رد', fast:'سريع', quick:'سريع', speed:'سرعة', stage:'مرحلة', up:'تقدّم', advance:'تقدّم', move:'نقل', viewing:'معاينة', view:'معاينة',
   deal:'عقد', registered:'مسجّل', register:'تسجيل', sale:'بيع', sold:'بيع', won:'بيع', win:'فوز', idle:'بلا حركة', stale:'راكد', penalty:'خصم', overdue:'موعد فايت', missed:'فايت', late:'تأخير',
@@ -16673,7 +16675,7 @@ const PTS_WORDS={ first:'أول', response:'رد', reply:'رد', fast:'سريع'
   referral:'إحالة', bonus:'مكافأة', admin:'الإدارة', manual:'يدوي', adjust:'تعديل', adjustment:'تعديل', daily:'يومي', weekly:'أسبوعي', streak:'استمرارية', meeting:'اجتماع', study:'دراسة', share:'رابط',
   message:'رسالة', msg:'رسالة', login:'دخول', market:'بنك السوق', contest:'مسابقة', target:'تاركت', hit:'تحقيق', reach:'تحقيق', reservation:'حجز', booking:'حجز', contract:'عقد', payment:'دفعة', paid:'صرف',
   ann:'إعلان', announcement:'إعلان', read:'قراءة', hour:'ساعة', h1:'خلال ساعة', h24:'خلال يوم', '1h':'خلال ساعة', '24h':'خلال يوم', negotiation:'تفاوض', interested:'مهتم', objection:'اعتراض', client:'عميل',
-  customer:'عميل', unit:'وحدة', points:'نقاط', point:'نقطة', team:'الفريق', coach:'المساعد', ai:'الذكاء', voice:'صوتية', wa:'واتساب', whatsapp:'واتساب', import:'استيراد', export:'تصدير', profile:'الملف',
+  customer:'عميل', added:'جديد', add:'إضافة', created:'جديد', create:'إضافة', self:'بنفسك', unit:'وحدة', points:'نقاط', point:'نقطة', team:'الفريق', coach:'المساعد', ai:'الذكاء', voice:'صوتية', wa:'واتساب', whatsapp:'واتساب', import:'استيراد', export:'تصدير', profile:'الملف',
   avatar:'الصورة', status:'الحالة', handle:'المعرّف', guide:'الدليل', tour:'الجولة', agreement:'الاتفاقية', signed:'توقيع', sign:'توقيع', com:'تجاري', commercial:'تجاري', res:'سكني', pool:'البركة', assigned:'استلام', assign:'تكليف' };
 function ptsLabel(x){
   if(!x) return 'نقاط';
@@ -16731,20 +16733,28 @@ const PTS_SEEN = () => PTS_KEY()+'-seen';
 const ptsRowKey = x => String(x.id || ((x.created_at||'')+'|'+(x.rule_code||x.label_ar||'')+'|'+x.points));
 function ptsWatch(rows){
   if(!ME || !Array.isArray(rows)) return;
-  let seen=null; try{ seen=JSON.parse(localStorage.getItem(PTS_SEEN())||'null'); }catch(e){}
-  const keys=rows.map(ptsRowKey);
-  const save=list=>{ try{ localStorage.setItem(PTS_SEEN(), JSON.stringify(list.slice(0,150))); }catch(e){} };
-  if(!Array.isArray(seen)){ save(keys); return; }                        // أول مرة على هذا الجهاز: نسجّل بس
-  const S=new Set(seen), fresh=rows.filter((x,i)=>!S.has(keys[i]) && +x.points>0);
-  save([...new Set([...keys, ...seen])]);
-  if(!fresh.length) return;
-  const n=fresh.reduce((t,x)=>t+(+x.points||0),0);
-  const pend=ptsPend();                                                     // احتفلنا بيها من الإشعار قبل لحظة؟
-  if(pend>=n){ ptsPendSet(pend-n); return; }
+  let st=null; try{ st=JSON.parse(localStorage.getItem(PTS_SEEN())||'null'); }catch(e){}
+  const keys=rows.map(ptsRowKey), total=rows.reduce((t,x)=>t+(+x.points||0),0);
+  const save=()=>{ try{ localStorage.setItem(PTS_SEEN(), JSON.stringify({ total, keys:keys.slice(0,150) })); }catch(e){} };
+  if(!st || typeof st!=='object' || Array.isArray(st)){ save(); return; }   // أول مرة على هذا الجهاز: نسجّل بس
+  // الزيادة = فرق المجموع — يشتغل سواء القاعدة ترجّع صف لكل حدث أو مجموع لكل قاعدة
+  const gain=total-(+st.total||0);
+  const S=new Set(st.keys||[]), fresh=rows.filter((x,i)=>!S.has(keys[i]) && +x.points>0);
+  save();
+  if(gain<=0) return;
+  const pend=ptsPend();                                                     // احتفلنا بيها من الإشعار أو البث قبل لحظة؟
+  if(pend>=gain){ ptsPendSet(pend-gain); return; }
   ptsPendSet(0);
-  const g=ptsGet(); if(g!=null) ptsSet(g+(n-pend));
-  const why=[...new Set(fresh.map(ptsLabel))].slice(0,2).join(' · ');
-  setTimeout(()=>ptsWin(n-pend, why), 350);
+  const g=ptsGet(); if(g!=null) ptsSet(g+(gain-pend));
+  const why=[...new Set(fresh.map(ptsLabel))].slice(0,2).join(' · ')||'نقاط جديدة';
+  setTimeout(()=>ptsWin(gain-pend, why), 350);
+}
+// بث مباشر: صف جديد بجدول النقاط لهذا الموظف → فرقعة فورية (إذا الجدول ضمن البث بالقاعدة)
+function ptsLive(row){
+  const n=+(row&&row.points)||0; if(n<=0) return;
+  ptsWin(n, ptsLabel(row)); ptsBump(n);
+  const g=ptsGet(); if(g!=null) ptsSet(g+n);
+  setTimeout(ptsPoll, 1500);                                                // نحدّث «آخر نقاطك» — والمراقبة تعرف إننا احتفلنا
 }
 // تحديث دوري خفيف لـ«آخر نقاطك» وقت ما الشاشة مفتوحة — حتى تطلع الفرقعة بوقتها
 let PTS_POLL=null;
@@ -16760,6 +16770,7 @@ function ptsPollStart(){
   if(PTS_POLL) return;
   PTS_POLL=setInterval(ptsPoll, 90000);
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ptsPoll(); });
+  try{ sb.channel('pts-'+ME.id).on('postgres_changes', { event:'INSERT', schema:'public', table:'points_events', filter:`agent_id=eq.${ME.id}` }, p=>ptsLive(p.new)).subscribe(); }catch(e){}
 }
 function ptsWin(n, why){
   sndWin();
