@@ -1,0 +1,23 @@
+# OmniRoute - self-hosted AI gateway
+# Usage:
+#   cp .env.example .env   # then set INITIAL_PASSWORD
+#   docker compose up -d
+services:
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    container_name: omniroute
+    restart: unless-stopped
+    stop_grace_period: 40s
+    ports:
+      # Bound to localhost only. Put a reverse proxy with HTTPS in front
+      # if you need remote access.
+      - "127.0.0.1:20128:20128"
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /app/data
+    volumes:
+      - omniroute-data:/app/data
+
+volumes:
+  omniroute-data:
