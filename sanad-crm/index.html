@@ -83,6 +83,19 @@ body{background:var(--base);color:var(--text);font-family:'Tajawal',system-ui,sa
   font-size:15px;line-height:1.6; -webkit-font-smoothing:antialiased;
   transition:background-color .3s ease, color .3s ease}
 body.app{padding-bottom:82px}
+/* هيكل تطبيق بالتلفون: الصفحة نفسها ثابتة (ما يطلع وينزل شريط العنوان ولا تهتز) — الرأس والشريط السفلي مثبتين،
+   والمحتوى (#view) هو الوحيد اللي يتمرر. بالحاسبة والشاشات الواسعة تبقى الصفحة تتمرر مثل قبل */
+@media (max-width:899px){
+  html{height:100%}
+  body.app{height:100%;overflow:hidden;padding-bottom:0}
+  body.app #app{display:flex;flex-direction:column;height:100%}
+  body.app header{position:static;flex:none}
+  body.app main#view{flex:1 1 auto;min-height:0;min-width:0;align-self:stretch;margin:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+    max-width:none;padding-inline:max(14px, calc(50% - 230px));padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+}
+/* لمسة التطبيق: بلا وميض أزرق عند اللمس (أندرويد) ولا تحديد نص بالضغط المطوّل على الأزرار */
+body{-webkit-tap-highlight-color:transparent}
+nav,.navin button,.themebtn,.subtabs button,.markbtn{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .themebtn{margin-inline-start:6px;flex:0 0 auto;width:34px;height:34px;border-radius:50%;
   border:1px solid var(--line);color:var(--muted);font-size:15px;display:grid;place-items:center;
   background:var(--surface);transition:background .15s,border-color .15s,transform .1s}
@@ -107,7 +120,7 @@ body.app{padding-bottom:82px}
 .cur{font-size:.62em;font-weight:400;color:var(--muted);margin-inline-start:2px}
 button{font-family:inherit;font-size:inherit;color:inherit;border:0;background:none;cursor:pointer}
 a{text-decoration:none}
-input,textarea,select{font-family:inherit;font-size:16px}
+input,textarea,select{font-family:inherit;font-size:16px;box-sizing:border-box}   /* العرض يشمل الحشوة والحد — خانة width:100% ما تطلع برّه حافة الشاشة */
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px;border-radius:5px}
 .wrap{max-width:460px;margin:0 auto;padding:0 14px}
 
@@ -118,7 +131,7 @@ div[style*="position: fixed"] > a[href*="netlify"]{
   display:none!important;visibility:hidden!important;pointer-events:none!important;
   opacity:0!important;width:0!important;height:0!important}
 
-.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:20px}
 .loginbox{width:100%;max-width:340px;text-align:center}
 .loginbox .mark{width:54px;height:66px;margin:0 auto 18px}
 .loginbox h1{font-size:21px;font-weight:700;margin:0 0 4px}
@@ -410,7 +423,7 @@ nav{position:fixed;bottom:0;left:0;right:0;z-index:2147483000;background:var(--s
 .scrim.open{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:2147483200;background:var(--surface);
   backdrop-filter:var(--glass-blur);border-top:var(--glass-border);border-radius:18px 16px 0 0;transform:translateY(102%);
-  transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:93vh;overflow-y:auto;
+  transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:93vh;max-height:93dvh;overflow-y:auto;overscroll-behavior:contain;
   padding-bottom:env(safe-area-inset-bottom);box-shadow:var(--shadow-lg)}
 .sheet.open{transform:translateY(0)}
 .sheetin{max-width:460px;margin:0 auto;padding:6px 16px 22px}
@@ -2240,6 +2253,13 @@ const M = 1e6;
 let ME=null, PROF=null, PROJECTS=[], CATALOG=[], OBJ=[], LEADS=[], TASKS=[], DEALS=[],
     TEAM=[], NAMES={}, PENDING=[], COMMITS=[], AFTER=[];
 let tab='queue', draft=null, addDraft=null, dealDraft=null, TL=[], tlAll=false, acForm={};
+// بالتلفون المحتوى (#view) هو اللي يتمرر مو الصفحة (هيكل تطبيق) — كل «ارجع لفوگ» يمر من هنا
+const appScroller = () => (document.body.classList.contains('app') && window.innerWidth < 900) ? document.getElementById('view') : null;
+function appScrollTo(y, smooth){
+  const s=appScroller(), o={ top:y, behavior:smooth?'smooth':'auto' };
+  try{ if(s) s.scrollTo(o); else window.scrollTo(o); }catch(e){ if(s) s.scrollTop=y; else window.scrollTo(0,y); }
+}
+const appScrollY = () => { const s=appScroller(); return s ? s.scrollTop : window.scrollY; };
 let POOL=[], HEALTH=[], IMP=null, impKind='residential', poolSel=new Set(), PROJADMIN=[], projDraft=null;
 let INCOMING=[], TREQS=[], TLEFT=3, moveDraft=null, bounceOpen=null, bounceWhy='', taskDraft=null;
 let STAFF=[], PENDSTAFF=[], staffDraft=null, replDraft=null, REPLS=[];
@@ -2294,7 +2314,7 @@ document.getElementById('msgBtn').onclick = () => openMsgDrop();
 document.getElementById('waBtn').onclick = () => {
   tab = 'wa';
   document.querySelectorAll('#nav [data-tab]').forEach(x=>x.classList.remove('on'));
-  render(); window.scrollTo(0,0);
+  render(); appScrollTo(0);
 };
 document.addEventListener('click', e=>{
   const nd=$('#notifDrop'), md=$('#msgDrop');
@@ -2559,7 +2579,7 @@ async function boot(){
   if(session==='wait') return;
   if(!session){ $('#login').style.display='grid'; $('#app').style.display='none'; return; }
   ME = session.user;
-  $('#login').style.display='none'; $('#app').style.display='block';
+  $('#login').style.display='none'; $('#app').style.display='';
   document.body.classList.add('app');
 
   let { data:prof, error:pe } = await sb.from('profiles')
@@ -3058,7 +3078,7 @@ function annBoard(){
 function annRepaint(){
   const box=$('#annbox');
   if(box){ box.innerHTML=annBoard(); bindAnn(); }
-  else { const y=window.scrollY; render(); window.scrollTo(0,y); }
+  else { const y=appScrollY(); render(); appScrollTo(y); }
 }
 function bindAnn(){
   const nw=$('#an-new'); if(nw) nw.onclick=openAnnSheet;
@@ -5665,7 +5685,7 @@ function bindTkBody(){
 }
 function bindAdmin(){
   bindExportReq();
-  const as=$('#adm-stk'); if(as) as.onclick=()=>{ stkF='team'; tab='tasks'; buildNav(); render(); window.scrollTo(0,0); };
+  const as=$('#adm-stk'); if(as) as.onclick=()=>{ stkF='team'; tab='tasks'; buildNav(); render(); appScrollTo(0); };
   keepInputs(['pt-n','pt-r']);
   document.querySelectorAll('[data-deal]').forEach(b=>b.onclick=()=>openDeal(b.dataset.deal));
   document.querySelectorAll('[data-paid]').forEach(b=>b.onclick=()=>markPaid(b.dataset.paid));
@@ -6311,7 +6331,7 @@ function viewDataCom(){
 function bindDataCom(){
   if(dataTab!=='com' || !COM_ON || !COM_ADMIN) return;
   if(!comLoaded){ if(!comBusy) loadCom(); return; }
-  const g=$('#dc-go'); if(g) g.onclick=()=>{ tab='com'; buildNav(); render(); window.scrollTo(0,0); };
+  const g=$('#dc-go'); if(g) g.onclick=()=>{ tab='com'; buildNav(); render(); appScrollTo(0); };
   document.querySelectorAll('[data-dcx]').forEach(b=>b.onclick=async()=>{
     if(b.classList.contains('busy') || !COM.length) return;
     b.classList.add('busy');
@@ -8368,7 +8388,7 @@ function modePaint(){
     if(error){ modePaint(); return toast(clean(error.message),'bad'); }
     guideMark(MODEG.keys);
     const o=$('#agr'); if(o) o.remove(); document.body.classList.remove('agr-on');
-    tab='queue'; buildNav(); render(); window.scrollTo(0,0);
+    tab='queue'; buildNav(); render(); appScrollTo(0);
     toast('أهلاً بيك بالسكني — هذا طابورك','gold');
   };
 }
@@ -8785,7 +8805,7 @@ function navMark(){
 }
 function navGo(k){
   tab=k; closeNavMore(); navMark();
-  render(); window.scrollTo(0,0); navFit();
+  render(); appScrollTo(0); navFit();
 }
 // التبويبات الصغيرة فوق الصفحة لمن المجموعة بيها أكثر من صفحة
 function subTabsBar(){
@@ -8820,7 +8840,7 @@ document.addEventListener('click', e=>{ if(!e.target.closest('#nav-more-pop')) c
     if(sheetOpen) closeSheet();
     msgConvo=null; msgFocus=false;
     const b=document.querySelector(`#nav [data-tab="${homeTab()}"]`);
-    if(b) b.click(); else { tab=homeTab(); render(); window.scrollTo(0,0); }
+    if(b) b.click(); else { tab=homeTab(); render(); appScrollTo(0); }
   };
 })();
 // الشريط يتمرر بالإصبع لمن الأقسام أكثر من عرض الشاشة.
@@ -10486,7 +10506,7 @@ function bindNotifDrop(){
     sb.rpc('mark_notifications_read',{p_id:id});   // ما ننتظرها — الفتح يصير فوراً
     if(kind==='announcement' || (n && /^(إعلان|مسابقة جديدة|إعلان تجاري|مسابقة تجارية جديدة): /.test(n.title||''))){
       const toCom = COM_ON && /تجاري|تجارية/.test((n&&n.title)||'');
-      tab=toCom?'com':homeTab(); buildNav(); render(); await loadAnn(false, annKey()); window.scrollTo({top:0,behavior:'smooth'});   // الإعلان: يفتح اللوحة بالطابور
+      tab=toCom?'com':homeTab(); buildNav(); render(); await loadAnn(false, annKey()); appScrollTo(0,true);   // الإعلان: يفتح اللوحة بالطابور
     }
     else if(n && COM_NT.test(n.title||'') && COM_ON){ await notifPrep(); await goComNotif(n); }
     else if(n && /^📅 طلب اجتماع/.test(n.title||'')){ await notifPrep(); await goMeetingNotif(n); }
@@ -10511,7 +10531,7 @@ function notifFlash(el){
 }
 function notifTab(k){
   if(!document.querySelector(`#nav [data-tab="${k}"]`)) return false;
-  tab=k; buildNav(); render(); window.scrollTo(0,0); return true;
+  tab=k; buildNav(); render(); appScrollTo(0); return true;
 }
 // يلكى القسم بعنوانه — إذا مطوي يفتحه
 function notifSec(title){
@@ -10533,7 +10553,7 @@ async function notifGoSec(k, title, pre){
 // «👀 فتحوا الدراسة: …» → تبويب الدراسات على لوحة النتائج، ويومض على الدراسة نفسها بقائمة الأكثر مشاهدة
 async function goStudyOpenNotif(n){
   if(!notifTab('study')) return false;
-  ST.view='dash'; window.scrollTo(0,0);
+  ST.view='dash'; appScrollTo(0);
   await stDashLoad();
   const t=n.title||'', at=t.indexOf(': '), ttl=at>=0?t.slice(at+2).trim():'';
   await nWait(60);
@@ -10697,7 +10717,7 @@ function stkMini(){
 }
 function bindStkMini(){
   const a=$('#stk-mnew'); if(a) a.onclick=()=>openStkNew();
-  const b=$('#stk-mall'); if(b) b.onclick=()=>{ tab='tasks'; buildNav(); render(); window.scrollTo(0,0); };
+  const b=$('#stk-mall'); if(b) b.onclick=()=>{ tab='tasks'; buildNav(); render(); appScrollTo(0); };
   document.querySelectorAll('#stk-mini [data-stk]').forEach(x=>x.onclick=()=>openStk(x.dataset.stk));
   document.querySelectorAll('#stk-mini [data-stkok]').forEach(x=>x.onclick=()=>stkAct(x.dataset.stkok,'accept'));
   document.querySelectorAll('#stk-mini [data-stkno]').forEach(x=>x.onclick=()=>stkAct(x.dataset.stkno,'reject'));
@@ -11597,7 +11617,7 @@ function bindProfile(){
     const id=PROFILE.id; closeSheet();
     tab='messages'; msgConvo=id; msgFocus=false; msgCaret=null;
     document.querySelectorAll('#nav [data-tab]').forEach(x=>x.classList.remove('on'));
-    render(); window.scrollTo(0,0);
+    render(); appScrollTo(0);
     await markRead(id);
   };
 }
@@ -11954,7 +11974,7 @@ function placeMsgBar(){
   bar.style.left = bar.style.right = '';
   bar.style.insetInlineStart = side ? navEl.offsetWidth+'px' : '0px';
   bar.style.insetInlineEnd = '0px';
-  if(sub) sub.style.top = headH+'px';
+  if(sub) sub.style.top = (appScroller() ? 0 : headH)+'px';
   if(list) list.style.paddingBottom = (bar.offsetHeight+16)+'px';
 }
 window.addEventListener('resize', ()=>{ if($('#msg-inputbar')) placeMsgBar(); });
@@ -11998,7 +12018,7 @@ function bindMessages(){
     if(send) send.onmousedown=e=>e.preventDefault();   // ضغط «إرسال» ما يطلّع المؤشر من الخانة
 
     placeMsgBar();
-    window.scrollTo(0, document.body.scrollHeight);
+    appScrollTo(1e9);
   }
 }
 
@@ -16025,16 +16045,16 @@ function stMark(){
 function stBind(){
   const box=document.getElementById('stbox'); if(!box) return;
   const on=(sel,fn)=>box.querySelectorAll(sel).forEach(el=>el.onclick=()=>fn(el));
-  on('[data-stnew]', el=>{ ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.cur=stNewStudy(el.dataset.stnew); ST.dirty=false; ST.expect=null; ST.chk=null; ST.view='edit'; stPaint(); window.scrollTo(0,0); });
+  on('[data-stnew]', el=>{ ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.cur=stNewStudy(el.dataset.stnew); ST.dirty=false; ST.expect=null; ST.chk=null; ST.view='edit'; stPaint(); appScrollTo(0); });
   on('[data-stopen]', el=>stOpen(el.dataset.stopen));
-  const pb=box.querySelector('#st-prof'); if(pb) pb.onclick=()=>{ ST.view='prof'; ST.chk=null; stPaint(); window.scrollTo(0,0); };
-  const mkt=box.querySelector('#st-mkt'); if(mkt) mkt.onclick=()=>{ ST.view='market'; stPaint(); stMkLoad(); window.scrollTo(0,0); };
+  const pb=box.querySelector('#st-prof'); if(pb) pb.onclick=()=>{ ST.view='prof'; ST.chk=null; stPaint(); appScrollTo(0); };
+  const mkt=box.querySelector('#st-mkt'); if(mkt) mkt.onclick=()=>{ ST.view='market'; stPaint(); stMkLoad(); appScrollTo(0); };
   const brn=box.querySelector('#st-brief-new'); if(brn) brn.onclick=stBriefOpen;
-  const dsh=box.querySelector('#st-dash'); if(dsh) dsh.onclick=()=>{ ST.view='dash'; stDashLoad(); window.scrollTo(0,0); };
+  const dsh=box.querySelector('#st-dash'); if(dsh) dsh.onclick=()=>{ ST.view='dash'; stDashLoad(); appScrollTo(0); };
   const dshr=box.querySelector('#st-dashr'); if(dshr) dshr.onclick=stDashLoad;
   if(ST.view==='edit'){ const shb=box.querySelector('#st-share'); if(shb) shb.onclick=stShareOpen; stSharesBind(); if(ST.sharesOpen && !(ST.shares&&ST.shares.sid===(ST.cur&&ST.cur.id))) stSharesLoad(); }
   const prc=box.querySelector('#st-price'); if(prc) prc.onclick=()=>{ ST.view='price'; const p0=(PROJECTS||[]).find(p=>p.is_active!==false);
-    if(!ST.pp && p0) stPpLoad(p0.slug); else stPaint(); window.scrollTo(0,0); };
+    if(!ST.pp && p0) stPpLoad(p0.slug); else stPaint(); appScrollTo(0); };
   if(ST.view==='price'){ stPriceBind(box); stMechBind(box); }
   const mkn=box.querySelector('#st-mknew'); if(mkn) mkn.onclick=()=>stMkChoose(()=>{ stMkLoad(); stMpLoadAll(); });
   if(ST.view==='market'){ stMpBind(box); if(STUDY_ADMIN && ST.mpAll===undefined) stMpLoadAll(); }
@@ -16049,7 +16069,7 @@ function stBind(){
     if(ST.view==='prof' && ST.profDirty && !confirm('ملف سند بيه تعديلات ما انحفظت. تطلع بدون حفظ؟')) return;
     if(ST.view==='edit'){ ST.dirty=false; ST.cur=null; }
     if(ST.view==='prof' && ST.profDirty){ ST.profDirty=false; ST.prof=null; ST.loaded=false; }
-    ST.view='list'; ST.chk=null; stPaint(); if(!ST.loaded) stLoad(); window.scrollTo(0,0); };
+    ST.view='list'; ST.chk=null; stPaint(); if(!ST.loaded) stLoad(); appScrollTo(0); };
   const hb=box.querySelector('#st-help'); if(hb) hb.onclick=()=>{ ST.help=!ST.help; stPaint(); };
   on('[data-stacc]', async el=>{ const id=el.dataset.stacc, r=ST.acc.rows.find(x=>x.id===id); el.disabled=true;
     const { error } = await sb.rpc('study_access_set',{p_user:id, p_on:!r.on});
@@ -16161,7 +16181,7 @@ function stBind(){
   const du=box.querySelector('#st-dup'); if(du) du.onclick=()=>{
     if(ST.dirty && !confirm('أكو تعديلات ما انحفظت بهاي الدراسة — النسخة تاخذها، بس الأصل يبقى بدونها. تكمل؟')) return;
     const c=JSON.parse(JSON.stringify(ST.cur)); c.id=null; c.status='draft'; c.title='نسخة — '+c.title;
-    c.data.sections.forEach(x=>x.id=stId()); ST.cur=c; ST.dirty=true; ST.expect=null; ST.chk=null; stPaint(); window.scrollTo(0,0); toast('نسخة جديدة — غيّر العنوان والجهة واحفظ'); };
+    c.data.sections.forEach(x=>x.id=stId()); ST.cur=c; ST.dirty=true; ST.expect=null; ST.chk=null; stPaint(); appScrollTo(0); toast('نسخة جديدة — غيّر العنوان والجهة واحفظ'); };
   const dl=box.querySelector('#st-del'); if(dl) dl.onclick=async()=>{
     if(!confirm('تحذف الدراسة «'+ST.cur.title+'» نهائياً؟')) return;
     const { error } = await sb.rpc('study_delete',{p_id:ST.cur.id});
@@ -16175,7 +16195,7 @@ async function stOpen(id){
   if(!d.sections.some(x=>x.a==='closing')) d.sections.push({id:stId(), a:'closing', on:true});
   ST.cur={ id:data.id, title:data.title||'', project_name:data.project_name||'', recipient:data.recipient||'', kind:data.kind||'res', status:data.status||'draft', follow_at:data.follow_at||null, data:d };
   ST.log=null; ST.insOpen=null;
-  ST.expect=data.updated_at; ST.dirty=false; ST.chk=null; ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.view='edit'; stPaint(); window.scrollTo(0,0);
+  ST.expect=data.updated_at; ST.dirty=false; ST.chk=null; ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.view='edit'; stPaint(); appScrollTo(0);
 }
 async function stLoadAcc(){
   const { data, error } = await sb.rpc('study_access_list');
@@ -17370,11 +17390,11 @@ function pwaRow(){
 }
 
 
-/* ── الشريط السفلي بالتلفون: يختفي ويا الكيبورد، وينزل لمن تمرر لجوّه ويرجع لمن تمرر لفوگ ── */
+/* ── الشريط السفلي بالتلفون: ثابت مثل تطبيقات التلفون — يختفي بس ويا الكيبورد حتى ما يغطي الخانات ── */
 (function navAuto(){
   const mobile = () => window.innerWidth < 900;
   const isField = el => !!el && (el.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]),textarea,select,[contenteditable="true"]'));
-  let kb=false, scrollHid=false, lastY=window.scrollY, acc=0;
+  let kb=false, scrollHid=false;
   const apply = () => {
     const hide = mobile() && (kb || scrollHid);
     if(document.body.classList.contains('nav-hide')!==hide){
@@ -17388,14 +17408,6 @@ function pwaRow(){
     const open = (window.innerHeight - visualViewport.height) > 140;
     if(!open && kb && !isField(document.activeElement)){ kb=false; apply(); }
   });
-  window.addEventListener('scroll', () => {
-    const y=window.scrollY, d=y-lastY; lastY=y;
-    if(kb || !mobile()) return;
-    if(y < 60){ if(scrollHid){ scrollHid=false; apply(); } acc=0; return; }
-    acc = (Math.sign(d)===Math.sign(acc)) ? acc+d : d;
-    if(acc > 24 && !scrollHid){ scrollHid=true; apply(); }          // تمرر لجوّه: ينزل
-    else if(acc < -16 && scrollHid){ scrollHid=false; apply(); }    // تمرر لفوگ: يطلع
-  }, { passive:true });
   // تبديل القسم: الشريط يرجع
   document.addEventListener('click', e => { if(e.target.closest && e.target.closest('nav')){ scrollHid=false; apply(); } }, true);
 })();
@@ -17888,7 +17900,7 @@ function stPvPaint(){
 }
 addEventListener('resize', ()=>{ if(ST.pv) stPvPaint(); });
 document.addEventListener('click', e=>{ const b=e.target.closest&&e.target.closest('#u-mech'); if(!b) return;
-  const sl=(typeof uProj!=='undefined'&&uProj)||((PROJECTS||[]).find(p=>p.is_active!==false)||{}).slug; tab='study'; ST.view='price'; buildNav(); render(); if(sl) stPpLoad(sl); window.scrollTo(0,0); });
+  const sl=(typeof uProj!=='undefined'&&uProj)||((PROJECTS||[]).find(p=>p.is_active!==false)||{}).slug; tab='study'; ST.view='price'; buildNav(); render(); if(sl) stPpLoad(sl); appScrollTo(0); });
 /* ═══ المساعد الصوتي ← الدراسات والحاسبة ═══ */
 const VST_ST_AR={ draft:'مسودة', sent:'انرسلت', talks:'بالتفاوض', won:'انقبلت', lost:'انرفضت' };
 const VST_INFO=['calc','s_stats','s_dash','market'];
@@ -18179,7 +18191,7 @@ async function stBriefRun(kind, txt, rcp, onOk){
     s.data.brief=txt;
     if(d.calc && typeof d.calc==='object'){ const c=s.data.calc=s.data.calc||{}; for(const k of ['total','sold','months','price','down','inst_months']) if(d.calc[k]!=null && d.calc[k]!=='') c[k]=String(d.calc[k]); }
     if(onOk) onOk();
-    ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.cur=s; ST.dirty=true; ST.expect=null; ST.chk=null; ST.view='edit'; stPaint(); window.scrollTo(0,0);
+    ST.ai={}; ST.aiOpen=null; ST.aiRev=null; ST.cur=s; ST.dirty=true; ST.expect=null; ST.chk=null; ST.view='edit'; stPaint(); appScrollTo(0);
     if(!s.title) s.title=s.project_name?`الدراسة التسويقية لـ${s.project_name}`:'دراسة جديدة';
     stPaint(); toast('انرتّبت الحقائق — هسه الذكاء يكتب الأقسام…','gold');
     await stAIAll(true);
