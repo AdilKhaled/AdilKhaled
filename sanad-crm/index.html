@@ -124,6 +124,12 @@ div[style*="position: fixed"] > a[href*="netlify"]{
 .loginbox h1{font-size:21px;font-weight:700;margin:0 0 4px}
 .loginbox p{font-size:13px;color:var(--muted);margin:0 0 24px}
 .loginbox .field{text-align:right;margin-bottom:10px}
+/* جلسة محفوظة والتحديث فشل (شبكة): نبيّن انتظار بدل خانات الدخول */
+.loginbox.waiting .field,.loginbox.waiting #l-go,.loginbox.waiting .lerr{display:none}
+.lwait{display:grid;gap:8px;justify-items:center;padding:6px 0 2px;font-size:14px}
+.lwait .pb-ring{width:30px;height:30px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--gold);animation:pb-rot .9s linear infinite}
+.lwait span{font-size:12.5px;color:var(--muted);line-height:1.7;min-height:1.4em}
+.lwait .save{margin-top:6px}
 .lerr{font-size:13px;color:var(--coral-ink);background:rgba(184,53,62,.10);border:1px solid var(--coral);
   border-radius:12px;padding:10px 12px;margin-top:12px;display:none;text-align:right}
 
@@ -978,6 +984,7 @@ body.agr-on{overflow:hidden}
 .cch-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0 0 12px}
 .cch-bar .pri{padding:9px 14px;border-radius:12px;border:0;background:var(--gold-fill);color:#221E1A;font:inherit;font-weight:800;cursor:pointer}
 .cch-bar .pri:disabled{opacity:.6}
+.cch-bar .pri.sec2{background:var(--cyan-fill);color:var(--on-accent)}
 .cch-bar .hint{margin:0;flex:1;min-width:180px}
 .cch-i{border:1px solid var(--line);border-inline-start:3px solid var(--gold-fill);border-radius:12px;padding:11px 13px;margin-bottom:10px;background:var(--surface)}
 .cch-i.urg{border-inline-start-color:var(--coral)}
@@ -2139,6 +2146,8 @@ body.agr-on{overflow:hidden}
     <input class="field" id="l-pass" type="password" autocomplete="current-password" placeholder="كلمة السر">
     <button class="save" id="l-go">دخول</button>
     <div class="lerr" id="l-err"></div>
+    <div class="lwait" id="l-wait" style="display:none"><i class="pb-ring"></i><b>جاري الاتصال بالقاعدة…</b><span id="l-wait-s"></span>
+      <button type="button" class="save" id="l-retry" style="display:none">أعد المحاولة</button></div>
   </div>
 </div>
 
@@ -2197,9 +2206,11 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
       const { data, error } = await sb.auth.refreshSession();
       if(!error && data && data.session){
         r = await raw(fn, args, opts);              // محاولة ثانية بجلسة طازجة
-      }else{
+      }else if(isAuthDead(error)){                  // القاعدة رفضت الجلسة نفسها → دخول من جديد
         try{ toast('انتهت جلستك — سجّل دخول من جديد','bad'); }catch(e){}
         setTimeout(async()=>{ try{ await sb.auth.signOut(); }catch(e){} location.reload(); }, 1600);
+      }else{                                        // ما وصل رد (شبكة): نرجّع الخطأ ونخلي المستخدم داخل
+        try{ toast('ما أكو اتصال — جرّب بعد لحظة','bad'); }catch(e){}
       }
     }catch(e){ /* نرجّع الخطأ الأصلي */ }
     finally{ recovering = false; }
@@ -2515,8 +2526,37 @@ $('#logout').onclick = async () => { if(!confirm('تسجّل خروج من ال�
 })();
 
 /* ═══════════ التحميل ═══════════ */
+// الجلسة محفوظة بالجهاز بس التوكن انتهى والتحديث فشل (غالباً بلا إنترنت لحظة فتح التطبيق):
+// نعيد المحاولة كم مرة ونبيّن «جاري الاتصال» بدل شاشة الدخول — الدخول من جديد بس إذا القاعدة قالت إن الجلسة فعلاً باطلة
+const SB_STORE_KEY = 'sb-'+new URL(SUPABASE_URL).hostname.split('.')[0]+'-auth-token';
+const storedSession = () => { try{ return !!localStorage.getItem(SB_STORE_KEY); }catch(e){ return false; } };
+const isAuthDead = e => !!e && (/invalid refresh token|refresh token not found|refresh_token_not_found|already used|revoked|session_not_found|session not found|user not found|invalid_grant|user_banned/i.test(String(e.message||e))
+  || [400,401,403].includes(+e.status));
+async function sessionRecover(){
+  if(!storedSession()) return null;
+  const lb=$('#login'), box=lb.querySelector('.loginbox'), lw=$('#l-wait');
+  lb.style.display='grid'; $('#app').style.display='none'; box.classList.add('waiting'); lw.style.display='grid';
+  const st=t=>{ const s=$('#l-wait-s'); if(s) s.textContent=t; };
+  const back=()=>{ box.classList.remove('waiting'); lw.style.display='none'; };
+  for(let i=0;i<4;i++){
+    if(i){ st(i===1?'ما وصل رد — نحاول مرة ثانية…':`المحاولة ${i+1} من 4…`); await new Promise(r=>setTimeout(r, 1200*i)); }
+    try{
+      const { data, error } = await sb.auth.refreshSession();
+      if(data && data.session){ back(); return data.session; }
+      if(isAuthDead(error)){ try{ localStorage.removeItem(SB_STORE_KEY); }catch(e){} back(); return null; }   // جلسة باطلة فعلاً → دخول من جديد
+    }catch(e){ if(isAuthDead(e)){ back(); return null; } }
+  }
+  // ٤ محاولات بلا رد: الجلسة محفوظة — نخلي زر إعادة المحاولة، وأول ما يرجع الإنترنت ندخّله تلقائياً
+  st('ما أكو اتصال بالإنترنت. جلستك محفوظة — راح ندخّلك تلقائياً أول ما يرجع الاتصال.');
+  const rb=$('#l-retry'); if(rb){ rb.style.display='inline-block'; rb.onclick=()=>location.reload(); }
+  window.addEventListener('online', ()=>location.reload(), { once:true });
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && navigator.onLine!==false) location.reload(); }, { once:true });
+  return 'wait';
+}
 async function boot(){
-  const { data:{ session } } = await sb.auth.getSession();
+  let { data:{ session } } = await sb.auth.getSession();
+  if(!session) session = await sessionRecover();
+  if(session==='wait') return;
   if(!session){ $('#login').style.display='grid'; $('#app').style.display='none'; return; }
   ME = session.user;
   $('#login').style.display='none'; $('#app').style.display='block';
@@ -2578,6 +2618,7 @@ async function boot(){
   subscribeRealtime();
   pushSync();
   pwaBoot();
+  ptsPollStart();
   loadStk();
   loadCoach().then(()=>{ if(tab==='queue'||tab==='dash'){ try{ render(); }catch(e){} } });
   if(!needAgr){
@@ -2781,7 +2822,7 @@ async function loadAll(){
   DIR         = dir.data || [];
   DIRMAP      = {}; for(const d of DIR) DIRMAP[d.id]=d;
   MYPROF      = myprof.data || null;
-  setTimeout(()=>{ try{ ptsCheck(); }catch(e){} }, 900);
+  setTimeout(()=>{ try{ ptsWatch(MY_POINTS); ptsCheck(); }catch(e){} }, 900);
   setTimeout(()=>{ try{ decLoadExtras(true); }catch(e){} }, 1400);
   AI_REPORTS  = reports.data || [];
   AI_CONV     = aiConv.data || [];
@@ -5144,7 +5185,7 @@ function myProfileData(){
     sales_month: myAllDeals().filter(d=>d.status!=='cancelled'
         && new Date(d.created_at)>=new Date(new Date().getFullYear(), new Date().getMonth(), 1))
         .reduce((t,d)=>t+(+d.sale_value||0),0),
-    top_points: (MY_POINTS||[]).slice(0,5).map(x=>({label:x.label_ar, points:x.points})) };
+    top_points: (MY_POINTS||[]).slice(0,5).map(x=>({label:ptsLabel(x), points:x.points})) };
 }
 function viewWallet(){
   const p = myProfileData();
@@ -5232,7 +5273,7 @@ function leaderboardBox(){
       <b class="num ${i===0?'g':''}">${r.total_points}</b></div>`;
   }).join('');
   const breakdown = MY_POINTS.length ? `<div class="hint" style="margin-top:8px">
-    ${MY_POINTS.slice(0,4).map(p=>`${esc(p.label_ar)} +${p.points}`).join(' · ')}</div>` : '';
+    ${MY_POINTS.slice(0,4).map(p=>`${esc(ptsLabel(p))} +${p.points}`).join(' · ')}</div>` : '';
   return `<div class="sec" style="margin-top:22px"><h2>ترتيب الفريق هذا الأسبوع</h2></div>
     <div class="brk">${rows}</div>${breakdown}`;
 }
@@ -6847,7 +6888,7 @@ const XDS = [
       النوع:n.kind, العنوان:n.title, التفاصيل:n.body||'', مقروء:n.read_at?'نعم':'لا', _created:n.created_at, _owner:n.user_id }),
     group:['الموظف','مقروء'] },
   { g:'سجل النظام', k:'points', t:'النقاط', d:'نقاط الفريق وأسبابها.', table:'points_events', f:{period:1, agent:1}, agentLbl:'الموظف',
-    map:p=>({ التاريخ:p.created_at, الموظف:xWho(p.agent_id), السبب:p.rule_code, النقاط:p.points, الأسبوع:p.week_start,
+    map:p=>({ التاريخ:p.created_at, الموظف:xWho(p.agent_id), السبب:ptsLabel(p), النقاط:p.points, الأسبوع:p.week_start,
       _created:p.created_at, _owner:p.agent_id }), group:['الموظف','السبب'], sum:['النقاط'] },
   { g:'سجل النظام', k:'airep', t:'تقارير المساعد الذكي', d:'التقارير التلقائية الأسبوعية والشهرية.', table:'ai_reports', f:{period:1, agent:1}, agentLbl:'الموظف',
     map:r=>({ التاريخ:r.created_at, التقرير:String(r.scope||'').startsWith('company')?'الشركة':xWho(r.agent_id),
@@ -8001,6 +8042,7 @@ function coachSheetHTML(){
       ${Object.entries(owners).sort((a,b)=>b[1]-a[1]).map(([id,n])=>`<button class="opt ${COACH.owner===id?'sel':''}" data-cown="${id}">${esc(NAMES[id]||'—')} <small>${n}</small></button>`).join('')}</div>`:''}
     <div class="cch-bar">
       <button type="button" class="pri" id="cch-ref" ${COACH.refreshing?'disabled':''}>${COACH.refreshing?'المساعد يكتب…':'✦ حدّث الملاحظات بالذكاء'}</button>
+      ${open.length?`<button type="button" class="pri sec2" id="cch-all" ${COACH.bulk?'disabled':''}>${COACH.bulk?'جاري التكليف '+COACH.bulk:(isStaff()?`كلّف الكل بمهام (${open.filter(x=>x.owner_id).length})`:`ضيف الكل لمهامي (${open.length})`)}</button>`:''}
       <span class="hint">${COACH.on?(hasAI?'الملاحظات الذكية تتحدث كل صبح تلقائياً':'هسه ملاحظات النظام — اضغط حتى يكتبها المساعد الذكي بتفاصيل كل عميل'):'تحتاج ملف ٧٣ بالقاعدة ودالة ai-coach'}</span></div>
     ${open.length?open.map(x=>coachNoteHTML(x)).join(''):`<div class="empty"><b>ما أكو عميل مهم متروك 👍</b>كل عملاءك المهمين عليهم حركة.</div>`}
     ${done.length?`<button type="button" class="ins-link" id="cch-sd" style="margin:14px 0 6px">${COACH.showDone?'اخفي':'شوف'} اللي تحرّكت عليهم (${done.length})</button>${COACH.showDone?done.map(x=>coachNoteHTML(x)).join(''):''}`:''}`;
@@ -8040,7 +8082,41 @@ function bindCoachSheet(){
   const own=$('#cch-own'); if(own) own.onclick=e=>{ const b=e.target.closest('[data-cown]'); if(!b) return; COACH.owner=b.dataset.cown; paintCoach(); };
   const sd=$('#cch-sd'); if(sd) sd.onclick=()=>{ COACH.showDone=!COACH.showDone; paintCoach(); };
   const rf=$('#cch-ref'); if(rf) rf.onclick=()=>coachRefresh();
+  const al=$('#cch-all'); if(al) al.onclick=()=>coachBulk();
   bindCoachActions($('#sheetin'), paintCoach);
+}
+// مهمة جماعية: كل ملاحظة مفتوحة تصير مهمة متابعة عند صاحب العميل (الإدارة) أو بمهامي (الموظف)
+// — بضغطة وحدة. العميل اللي عنده مهمة مفتوحة أصلاً ينتخطّى حتى ما تتكرر المهام.
+async function coachBulk(){
+  if(COACH.bulk) return;
+  let items=coachItems().filter(x=>!x.acted);
+  if(isStaff() && COACH.owner) items=items.filter(x=>x.owner_id===COACH.owner);
+  if(isStaff()) items=items.filter(x=>x.owner_id);
+  const hasTask=new Set((TASKS||[]).filter(t=>!t.completed_at).map(t=>t.lead_id));
+  const skipped=items.filter(x=>hasTask.has(x.lead_id)).length;
+  items=items.filter(x=>!hasTask.has(x.lead_id));
+  if(!items.length) return toast(skipped?'كل هذولا عندهم مهام مفتوحة أصلاً':'ما أكو ملاحظات مفتوحة','bad');
+  const owners=new Set(items.map(x=>x.owner_id)).size;
+  const who=owners===1?'موظف واحد':owners===2?'موظفين':owners+' موظفين';
+  const msg=(isStaff()?`تنعمل ${items.length} مهمة متابعة لـ${who} — كل موظف يستلم مهمة لكل عميل من عملائه بالقائمة.`:`تنضاف ${items.length} مهمة لمهامك.`)
+    +(skipped?`\n(${skipped} عندهم مهمة مفتوحة أصلاً — ينتخطّون)`:'')+'\nنكمل؟';
+  if(!confirm(msg)) return;
+  COACH.bulk='0/'+items.length; paintCoach();
+  let ok=0, fail=0, i=0;
+  for(const x of items){
+    const name=x.l.full_name||'العميل', title=(x.action||('تابع '+name)).slice(0,160), due=coachTaskDue(x.priority==='urgent'?'h1':'today');
+    const r = isStaff()
+      ? await sb.rpc('assign_task',{ p_lead_id:x.lead_id, p_agent_id:x.owner_id, p_type:'follow_up', p_title:title, p_due_at:due })
+      : await sb.rpc('task_add',{ p_to:ME.id, p_title:name+': '+title, p_body:x.headline||null, p_due:due, p_priority:x.priority==='urgent'?'high':'normal' });
+    if(r.error){ fail++; console.warn('coachBulk', r.error.message); } else ok++;
+    COACH.bulk=(++i)+'/'+items.length; const b=$('#cch-all'); if(b) b.textContent='جاري التكليف '+COACH.bulk;
+  }
+  COACH.bulk=null;
+  try{ await loadAll(); }catch(e){}
+  if(typeof loadStk==='function') loadStk();
+  if(sheetOpen && $('#cch-ref')) paintCoach();
+  if(tab==='queue'||tab==='dash'||tab==='tasks') render();
+  toast(fail?`انعملت ${ok} مهمة · ${fail} ما انحفظت`:(isStaff()?`انكلّف ${who} بـ${ok} مهمة`:`انضافت ${ok} مهمة لمهامك`), fail?'bad':'gold');
 }
 async function coachMark(id, status, note, after){
   const { error } = await sb.rpc('ai_coach_mark', { p_id:id, p_status:status, p_note:note });
@@ -11937,9 +12013,16 @@ function addGate(d){
   const key=phoneKey(d.phone);
   if(!key)
     return {ok:false,msg:'<b>الرقم مو صحيح.</b> عراقي اكتبه كامل مثل 07701234567 — ومن برّه العراق ابدأه بـ+ ورمز الدولة، مثل +201225891436.'};
-  const dup=LEADS.find(l=>phoneKey(l.phone||l.phone_raw)===key);
-  if(dup) return {ok:false,msg:`<b>هذا الرقم موجود</b> — ${esc(dup.full_name||'بلا اسم')} عند ${
-    esc(NAMES[dup.owner_id]||'محد')}. حدّث ملفه بدل ما تفتح جديد.`};
+  const dups=LEADS.filter(l=>phoneKey(l.phone||l.phone_raw)===key);
+  if(dups.length){
+    // نفس الرقم بنفس المشروع: ما نفتح ثاني. بمشروع مختلف: مسموح — العميل اهتم بمشروعين وكل موظف يتابعه بمشروعه
+    const same=dups.find(l=>!d.project || !l.projects || l.projects.slug===d.project);
+    if(same) return {ok:false,msg:`<b>هذا الرقم موجود</b> — ${esc(same.full_name||'بلا اسم')} عند ${
+      esc(NAMES[same.owner_id]||'محد')}${same.projects?' بـ'+esc(same.projects.name||''):''}. حدّث ملفه بدل ما تفتح جديد.`};
+    const o=dups[0], newProj=(projectsAll().find(x=>x[0]===d.project)||[])[1]||'المشروع الجديد';
+    return {ok:true, cross:o, msg:`<b>الرقم موجود بمشروع ثاني</b> — ${esc(o.full_name||'بلا اسم')} عند ${esc(NAMES[o.owner_id]||'محد')} بـ${esc(o.projects&&o.projects.name||'مشروع آخر')}.
+      راح ينفتح له ملف ثاني بـ${esc(newProj)} باسمك حتى نضمن اهتمامه بالمشروعين.`};
+  }
   if(d.source==='referral'&&!d.referrer.trim())
     return {ok:false,msg:'<b>منو الشخص المُحيل؟</b> اكتب اسمه.'};
   return {ok:true,msg:'<b>تمام.</b> العميل راح يُفتح باسمك مباشرة، مو بالدور.'};
@@ -12032,7 +12115,11 @@ async function doAdd(){
     p_name:d.name.trim(), p_phone:d.phone.trim(), p_project:d.project,
     p_down:d.down?d.down/M:null, p_instal:d.instal?d.instal/M:null,
     p_period_m:d.period, p_follow:d.follow||null, p_source:d.source });
-  if(error){ btn.disabled=false; btn.textContent='افتح الملف'; return toast(clean(error.message),'bad'); }
+  if(error){ btn.disabled=false; btn.textContent='افتح الملف';
+    // القاعدة بعدها تمنع نفس الرقم على مشروعين؟ (قيد فريد على الهاتف) — نقول وين الحل بدل رسالة قاعدة ما تنفهم
+    if(/duplicate|unique|already|exists|موجود|مكرر/i.test(String(error.message||'')) && addGate(d).cross)
+      return toast('القاعدة بعدها ما تسمح بنفس الرقم على مشروعين — شغّل ملف 95_الرقم_لكل_مشروع.sql من SQL Editor','bad');
+    return toast(clean(error.message),'bad'); }
 
   if(data){
     const patch={};
@@ -13066,7 +13153,7 @@ function viewCompete(){
     ${contests.length?`<div class="sec" style="margin-top:22px"><h2>المسابقات الحالية</h2><em>${contests.length}</em></div><div class="ans">${contests.map(annCard).join('')}</div>`:''}
     ${leaderboardBox()}
     ${MY_POINTS.length?`<div class="sec" style="margin-top:22px"><h2>آخر نقاطك</h2></div>
-      <div class="brk">${MY_POINTS.slice(0,12).map(x=>`<div><span>${esc(x.label_ar||x.rule_code||'')}</span><b class="num g">+${plain(+x.points||0)}</b></div>`).join('')}</div>`:''}`;
+      <div class="brk">${MY_POINTS.slice(0,12).map(x=>`<div><span>${esc(ptsLabel(x))}</span><b class="num ${+x.points<0?'':'g'}">${+x.points<0?'':'+'}${plain(+x.points||0)}</b></div>`).join('')}</div>`:''}`;
 }
 function bindCompete(){ try{ bindAnn(); }catch(e){} }
 
@@ -16574,6 +16661,32 @@ function stMkCard(){
 }
 /* ── النقاط تفاعلية: صوت فوز وفرقعة لمن تزيد نقاطك ── */
 const PTS_KEY = () => 'sanad-pts-'+(ME&&ME.id);
+// اسم القاعدة بالعربي: القاعدة أحياناً ترجّع رمز إنكليزي (مثل first_response_fast) بدل التسمية — نترجمه كلمة كلمة
+const PTS_EXACT={ first_response:'سرعة أول رد', first_response_fast:'رد سريع على عميل جديد', first_reply:'سرعة أول رد', fast_reply:'رد سريع', quick_reply:'رد سريع',
+  stage_up:'تقديم عميل لمرحلة أعلى', stage_advance:'تقديم عميل لمرحلة أعلى', stage_change:'تقديم عميل لمرحلة أعلى', viewing_set:'تحديد موعد معاينة', viewing_done:'معاينة', viewing:'معاينة',
+  deal_registered:'تسجيل عقد', deal_paid:'صرف عقد', deal:'عقد', sale:'بيع', won:'بيع', idle_penalty:'خصم: عميل بلا حركة', stale_penalty:'خصم: عميل راكد',
+  overdue_penalty:'خصم: موعد متابعة فات', missed_followup:'خصم: موعد متابعة فات', task_done:'إنجاز مهمة', task_completed:'إنجاز مهمة', admin_adjust:'تعديل من الإدارة', manual:'تعديل من الإدارة', adjustment:'تعديل من الإدارة',
+  call:'مكالمة', visit:'زيارة', note:'ملاحظة', referral:'إحالة', contest_win:'فوز بمسابقة', target_hit:'تحقيق التاركت', study_sent:'إرسال دراسة', study_won:'قبول دراسة', market_add:'إضافة لبنك السوق' };
+const PTS_WORDS={ first:'أول', response:'رد', reply:'رد', fast:'سريع', quick:'سريع', speed:'سرعة', stage:'مرحلة', up:'تقدّم', advance:'تقدّم', move:'نقل', viewing:'معاينة', view:'معاينة',
+  deal:'عقد', registered:'مسجّل', register:'تسجيل', sale:'بيع', sold:'بيع', won:'بيع', win:'فوز', idle:'بلا حركة', stale:'راكد', penalty:'خصم', overdue:'موعد فايت', missed:'فايت', late:'تأخير',
+  follow:'متابعة', followup:'متابعة', call:'مكالمة', visit:'زيارة', note:'ملاحظة', task:'مهمة', done:'إنجاز', complete:'إنجاز', completed:'إنجاز', lead:'عميل', new:'جديد', contact:'تواصل', contacted:'تواصل',
+  referral:'إحالة', bonus:'مكافأة', admin:'الإدارة', manual:'يدوي', adjust:'تعديل', adjustment:'تعديل', daily:'يومي', weekly:'أسبوعي', streak:'استمرارية', meeting:'اجتماع', study:'دراسة', share:'رابط',
+  message:'رسالة', msg:'رسالة', login:'دخول', market:'بنك السوق', contest:'مسابقة', target:'تاركت', hit:'تحقيق', reach:'تحقيق', reservation:'حجز', booking:'حجز', contract:'عقد', payment:'دفعة', paid:'صرف',
+  ann:'إعلان', announcement:'إعلان', read:'قراءة', hour:'ساعة', h1:'خلال ساعة', h24:'خلال يوم', '1h':'خلال ساعة', '24h':'خلال يوم', negotiation:'تفاوض', interested:'مهتم', objection:'اعتراض', client:'عميل',
+  customer:'عميل', unit:'وحدة', points:'نقاط', point:'نقطة', team:'الفريق', coach:'المساعد', ai:'الذكاء', voice:'صوتية', wa:'واتساب', whatsapp:'واتساب', import:'استيراد', export:'تصدير', profile:'الملف',
+  avatar:'الصورة', status:'الحالة', handle:'المعرّف', guide:'الدليل', tour:'الجولة', agreement:'الاتفاقية', signed:'توقيع', sign:'توقيع', com:'تجاري', commercial:'تجاري', res:'سكني', pool:'البركة', assigned:'استلام', assign:'تكليف' };
+function ptsLabel(x){
+  if(!x) return 'نقاط';
+  const lab=String(x.label_ar||'').trim();
+  if(lab && /[\u0600-\u06FF]/.test(lab)) return lab;                 // عربي جاهز من القاعدة
+  const code=String(x.rule_code||lab||x.code||'').trim(); if(!code) return 'نقاط';
+  const k=code.toLowerCase(); if(PTS_EXACT[k]) return PTS_EXACT[k];
+  const parts=k.replace(/([a-z])([0-9])/g,'$1_$2').split(/[_\-\s.:/]+/).filter(Boolean);
+  const words=parts.map(p=>PTS_WORDS[p]||p);
+  // «خصم» يتقدّم الجملة: idle_penalty → خصم: بلا حركة
+  const pi=words.indexOf('خصم'); if(pi>0){ words.splice(pi,1); return 'خصم: '+words.join(' '); }
+  return words.join(' ');
+}
 function ptsNow(){ const p=myProfileData()||{}; const v = p.points_total!=null ? +p.points_total : +p.points_week; return isFinite(v)?v:null; }
 function ptsGet(){ try{ const v=localStorage.getItem(PTS_KEY()); return v===null?null:+v; }catch(e){ return null; } }
 function ptsSet(v){ try{ localStorage.setItem(PTS_KEY(), String(v)); }catch(e){} }
@@ -16611,7 +16724,42 @@ function ptsFromNotif(title){
   const g=ptsGet(); if(g!=null) ptsSet(g+n);          // حتى ما نحتفل بيها مرة ثانية بالزيارة الجاية
   const pend=ptsPend();
   if(pend>=n){ ptsPendSet(pend-n); return true; }
-  ptsWin(n, m[2]||'نقاط جديدة'); return true;
+  ptsWin(n, m[2]||'نقاط جديدة'); ptsBump(n); return true;
+}
+// نراقب «آخر نقاطك» نفسها: كل صف جديد ما شفناه قبل = نقاط جديدة → فرقعة وصوت، حتى لو ما وصل إشعار
+const PTS_SEEN = () => PTS_KEY()+'-seen';
+const ptsRowKey = x => String(x.id || ((x.created_at||'')+'|'+(x.rule_code||x.label_ar||'')+'|'+x.points));
+function ptsWatch(rows){
+  if(!ME || !Array.isArray(rows)) return;
+  let seen=null; try{ seen=JSON.parse(localStorage.getItem(PTS_SEEN())||'null'); }catch(e){}
+  const keys=rows.map(ptsRowKey);
+  const save=list=>{ try{ localStorage.setItem(PTS_SEEN(), JSON.stringify(list.slice(0,150))); }catch(e){} };
+  if(!Array.isArray(seen)){ save(keys); return; }                        // أول مرة على هذا الجهاز: نسجّل بس
+  const S=new Set(seen), fresh=rows.filter((x,i)=>!S.has(keys[i]) && +x.points>0);
+  save([...new Set([...keys, ...seen])]);
+  if(!fresh.length) return;
+  const n=fresh.reduce((t,x)=>t+(+x.points||0),0);
+  const pend=ptsPend();                                                     // احتفلنا بيها من الإشعار قبل لحظة؟
+  if(pend>=n){ ptsPendSet(pend-n); return; }
+  ptsPendSet(0);
+  const g=ptsGet(); if(g!=null) ptsSet(g+(n-pend));
+  const why=[...new Set(fresh.map(ptsLabel))].slice(0,2).join(' · ');
+  setTimeout(()=>ptsWin(n-pend, why), 350);
+}
+// تحديث دوري خفيف لـ«آخر نقاطك» وقت ما الشاشة مفتوحة — حتى تطلع الفرقعة بوقتها
+let PTS_POLL=null;
+async function ptsPoll(){
+  if(!ME || document.hidden) return;
+  const r=await sb.rpc('my_points_breakdown', { p_agent_id: ME.id }).catch(()=>null);
+  if(!r || r.error || !Array.isArray(r.data)) return;
+  const before=MY_POINTS.length ? ptsRowKey(MY_POINTS[0]) : '';
+  MY_POINTS=r.data; ptsWatch(MY_POINTS);
+  if((MY_POINTS.length ? ptsRowKey(MY_POINTS[0]) : '')!==before && (tab==='compete'||tab==='wallet') && !sheetOpen) render();
+}
+function ptsPollStart(){
+  if(PTS_POLL) return;
+  PTS_POLL=setInterval(ptsPoll, 90000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) ptsPoll(); });
 }
 function ptsWin(n, why){
   sndWin();
