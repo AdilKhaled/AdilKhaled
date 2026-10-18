@@ -1876,6 +1876,57 @@ body.agr-on{overflow:hidden}
 .vca-act .save:not(.gd){background:none;color:var(--text);border:1px solid var(--line)}
 .vca-b>.save.gd{margin-top:4px}
 @media (min-width:900px){ .vca{place-items:center} .vca-fab{bottom:24px} }
+/* ═══ مهام الفريق (لوحة المهام) · سجل الموظف (متابعة وتقييم) ═══ */
+.tg-row{border:1px solid var(--line-soft);border-radius:14px;background:var(--surface);margin-bottom:8px;overflow:hidden}
+.tg-hd{display:flex;align-items:center;gap:10px;padding:10px 12px;width:100%;text-align:start;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+.tg-hd .av{flex:none}
+.tg-hd .tg-t{flex:1;min-width:0}
+.tg-hd b{display:block;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tg-hd em{display:block;font-style:normal;font-size:11.5px;color:var(--dim);margin-top:2px}
+.tg-n{display:flex;gap:4px;flex:none;align-items:center}
+.tg-n i{font-style:normal;font-size:11px;font-weight:700;min-width:24px;padding:2px 7px;border-radius:9px;background:var(--line-soft);color:var(--muted);text-align:center}
+.tg-n i.bad{background:rgba(184,53,62,.12);color:var(--coral)}
+.tg-n i.ok{background:rgba(27,127,69,.12);color:var(--wa)}
+.tg-n .chev{color:var(--dim);font-size:12px;transition:transform .2s;margin-inline-start:2px}
+.tg-row.open .tg-n .chev{transform:rotate(90deg)}
+.tg-bd{padding:4px 12px 12px;border-top:1px solid var(--line-soft)}
+.tg-act{display:flex;gap:6px;margin:8px 0 10px}
+.tg-act button{flex:1;padding:8px 6px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;color:var(--muted);background:var(--base)}
+.tg-act button.pri{background:var(--cyan-fill);border-color:var(--cyan-fill);color:var(--on-accent);font-weight:700}
+.tg-act button:disabled{opacity:.5}
+.lt{display:flex;align-items:center;gap:10px;width:100%;text-align:start;padding:9px 10px;border:1px solid var(--line-soft);border-radius:12px;background:var(--base);margin-bottom:6px;color:inherit;font:inherit}
+.lt>span:last-child{flex:1;min-width:0}
+.lt b{display:block;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lt em{display:block;font-style:normal;font-size:11.5px;color:var(--dim)}
+.lt.late{border-color:color-mix(in srgb,var(--coral) 45%,var(--line))}.lt.late em{color:var(--coral)}
+.lt-ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--line-soft);font-size:12px;color:var(--muted)}
+.lt.late .lt-ic{background:rgba(184,53,62,.12);color:var(--coral)}
+.rec-top{display:flex;align-items:center;gap:12px;margin:4px 0 14px}
+.rec-top .av{flex:none}
+.rec-top h2{margin:0;font-size:19px;font-weight:800;line-height:1.3}
+.rec-top .sub{font-size:12px;color:var(--dim)}
+.rec-back{flex:none;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);background:var(--surface);font-size:18px}
+.rec-avg{text-align:center;flex:none}
+.stars{color:var(--gold-hi);letter-spacing:1px;font-size:14px;white-space:nowrap}
+.rev{border:1px solid var(--line-soft);border-radius:14px;background:var(--surface);padding:12px 14px;margin-bottom:8px}
+.rev-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rev-hd b{font-size:14px}.rev-hd em{font-style:normal;font-size:11.5px;color:var(--dim);margin-inline-start:auto}
+.rev-cr{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 2px}
+.rev-cr span{font-size:11.5px;padding:3px 9px;border-radius:9px;background:var(--line-soft);color:var(--muted)}
+.rev p{margin:8px 0 0;font-size:13px;line-height:1.7;color:var(--text)}
+.rev p i{font-style:normal;color:var(--dim);font-size:11.5px;display:block}
+.rev-del{border:0;background:none;color:var(--coral);font-size:12px;padding:0;margin-top:8px;cursor:pointer}
+.rv-row{display:flex;align-items:center;gap:8px;margin:8px 0}
+.rv-row>span{flex:1;font-size:13.5px}
+.rv-row .opts{flex:none;gap:4px;flex-wrap:nowrap}
+.rv-row .opt{padding:6px 0;font-size:13px;min-width:34px;text-align:center}
+.rec-people>div{cursor:pointer}
+.rec-people .av{flex:none}
+.rec-people .rp-t{flex:1;min-width:0}
+.rec-people .rp-t b{display:block;font-weight:600;color:var(--text);font-size:14px}
+.rec-people .rp-t em{font-style:normal;font-size:11px;color:var(--dim)}
+.rec-people .rp-t em .bad{color:var(--coral)}
+
 /* ═══ الدراسات والعروض ═══ */
 @media(max-width:899px){
   nav{transition:transform .22s ease}
@@ -5332,7 +5383,141 @@ function sentNotesBox(){
     <span style="color:var(--muted);font-size:12.5px">${esc(String(n.body||'').slice(0,70))}</span></span>
     ${n.kind==='warning'?`<em style="flex:0 0 auto;color:${n.ack_at?'var(--cyan)':'var(--amber)'}">${n.ack_at?'استلمه':'ما استلمه'}</em>`:''}</div>`).join('')}</div>`;
 }
+/* ══════════ سجل الموظف: أرقامه · تقييماته الشهرية · مهامه · حركته — للمتابعة والتقييم ══════════ */
+function goRecord(id){
+  if(!id) return;
+  REC={ ...REC, agent:id, reviews:[], loaded:false, err:'', prof:null, draft:null };
+  if(sheetOpen) closeSheet();
+  if(isStaff()){ tab='team'; buildNav(); render(); appScrollTo(0); }
+  else openRecordSheet(id);
+  recLoad();
+}
+async function recLoad(){
+  const id=REC.agent; if(!id || REC.busy) return; REC.busy=true;
+  const [rv, pf] = await Promise.all([ sb.rpc('staff_review_list',{ p_agent:id }), sb.rpc('staff_profile',{ p_agent:id }).catch(e=>({error:e})) ]);
+  REC.busy=false; if(REC.agent!==id) return;
+  if(rv.error){ REC.on=!(NO_FN(rv.error) || /schema cache|could not find/i.test(rv.error.message||'')); REC.err=REC.on?clean(rv.error.message):''; REC.reviews=[]; }
+  else { REC.on=true; REC.err=''; REC.reviews=Array.isArray(rv.data)?rv.data:[]; }
+  REC.prof = (pf && !pf.error && pf.data) ? pf.data : null; REC.loaded=true;
+  if(isStaff() && !actLoaded && !actBusy) loadActivity();      // الحركة: نفس طلب تبويب الفريق — يرسم لمن يوصل
+  recRepaint();
+}
+function recRepaint(){
+  if(sheetOpen && $('#rec-sheet')){ paintRecordSheet(); return; }
+  if(tab==='team' && REC.agent && !sheetOpen) render();
+}
+function openRecordSheet(id){ REC.agent=id; paintRecordSheet(); openedSheet(); }
+function paintRecordSheet(){
+  const id=REC.agent, nm=NAMES[id]||(REC.prof&&REC.prof.full_name)||'سجلي';
+  $('#sheetin').innerHTML=`<div id="rec-sheet">${sheetHead(id===ME.id?'سجلي':nm, 'الأرقام والتقييمات والمهام')}${recHTML(false)}</div>`;
+  const x=$('#xclose'); if(x) x.onclick=()=>closeSheet();
+  bindGrab(); bindRecord();
+}
+function viewRecord(){ return recHTML(true); }
+function recHTML(page){
+  const id=REC.agent, p=TEAM.find(x=>x.id===id)||{ id, full_name:NAMES[id]||(REC.prof&&REC.prof.full_name)||'—', role:(REC.prof&&REC.prof.role)||'' }, pf=REC.prof||{}, S=recStats(id);
+  const last3=REC.reviews.slice(0,3), avg=last3.length?last3.reduce((t,r)=>t+(+r.score||0),0)/last3.length:null;
+  const tgt=r=>r&&r.has_target?Math.round(+r.pct_total||0)+'%':'—';
+  const acts=ACTV.filter(a=>a.agent_id===id).slice(0,30);
+  const canReview=isStaff() && id!==ME.id;
+  return `<div class="rec-top">${page?`<button type="button" class="rec-back" id="rec-back" aria-label="رجوع للفريق" title="رجوع">›</button>`:''}
+    ${avHTML(p.full_name, pf.avatar_url||avatarOf(id), 48)}
+    <div style="flex:1;min-width:0"><h2>${esc(p.full_name)}</h2><div class="sub">${esc(ROLE_AR[p.role]||p.role||'')}${pf.joined_at?` · بالفريق من ${esc(String(pf.joined_at).slice(0,10))}`:''}${p.is_active===false?' · موقوف':''}</div></div>
+    ${avg!=null?`<div class="rec-avg"><div class="stars">${recStars(avg)}</div><div class="hint" style="margin:0">${avg.toFixed(1)} من ٥ · آخر ${last3.length===1?'تقييم':last3.length===2?'تقييمين':last3.length+' تقييمات'}</div></div>`:''}
+  </div>
+  <div class="kpis">
+    <div class="kpi ${S.late?'warn':''}"><i>عملاء نشطون</i><b class="num">${S.act}</b><s>${S.late?S.late+' متأخر':''}${S.late&&S.stale?' · ':''}${S.stale?S.stale+' راكد':''}${!S.late&&!S.stale?'كلهم متابَعين':''}</s></div>
+    <div class="kpi"><i>صفقات الشهر</i><b class="num">${S.dm}</b><s>${S.sales?big(S.sales):'—'} · ${S.dall} صفقة إجمالاً</s></div>
+    <div class="kpi"><i>نسبة التحويل</i><b class="num">${S.conv==null?'—':S.conv+'%'}</b><s>${S.won} بيع من ${S.ls.length} عميل</s></div>
+    <div class="kpi ${S.ltLate+S.stLate?'warn':''}"><i>مهام مفتوحة</i><b class="num">${S.lt.length+S.stAct.length}</b><s>${S.ltLate+S.stLate?(S.ltLate+S.stLate)+' فات موعدها':(S.ldone+S.stDone)+' خلصت بالشهر'}</s></div>
+    <div class="kpi"><i>نقاط الأسبوع</i><b class="num">${S.pts==null?'—':plain(S.pts)}</b><s>${S.rank?'ترتيبه '+S.rank+' من '+LEADERBOARD.length:'مو بالترتيب بعد'}</s></div>
+    <div class="kpi"><i>التاركت</i><b class="num">${tgt(S.tw)}</b><s>الأسبوع · والشهر ${tgt(S.tm)}</s></div>
+  </div>
+  <div class="sec"><h2>التقييمات</h2><em>${REC.reviews.length?REC.reviews.length:''}</em></div>
+  ${!REC.loaded?'<div class="spin">جاري التحميل…</div>'
+    :!REC.on?'<div class="gate"><b>التقييمات تحتاج تحديث القاعدة.</b> شغّل ملف ٩٧ بـSupabase وارجع.</div>'
+    :`${REC.err?`<div class="fit miss"><i>ما انقرت التقييمات</i><span class="line">${esc(REC.err)}</span></div>`:''}
+      ${canReview?`<button type="button" class="save" id="rev-new" style="margin:0 0 10px">+ تقييم جديد</button>`:''}
+      ${REC.reviews.length?REC.reviews.map(revCard).join(''):`<div class="empty" style="padding:14px">ما أكو تقييم بعد${canReview?' — ابدأ أول تقييم شهري':''}</div>`}`}
+  ${S.notes?`<div class="sec" style="margin-top:18px"><h2>ملاحظات المساعد المفتوحة</h2><em>${S.notes}</em></div>
+    <div class="hint" style="margin:0">عملاء يحتاجون حركة — تنقلب مهام من زر «مهام من ملاحظات المساعد» بلوحة المهام</div>`:''}
+  <div class="sec" style="margin-top:18px"><h2>${id===ME.id?'مهامي الحالية':'مهامه الحالية'}</h2><em>${S.lt.length+S.stAct.length}</em></div>
+  ${S.lt.length||S.stAct.length?`${S.lt.slice(0,8).map(ltCard).join('')}${S.stAct.slice(0,8).map(t=>stkCard(t,{team:id!==ME.id})).join('')}`:'<div class="empty" style="padding:12px">ما أكو مهام مفتوحة</div>'}
+  ${isStaff()?`<div class="sec" style="margin-top:18px"><h2>${id===ME.id?'حركتي':'حركته'}</h2><em>${acts.length}</em></div>
+    ${!actLoaded?'<div class="spin">جاري التحميل…</div>':acts.length?`<div class="tl">${acts.map(a=>`<div class="ev k-${esc(a.action_code||'')}"><div class="t">${esc(a.action||'')}${a.lead_name?' — '+esc(a.lead_name):''}</div><div class="m">${esc(a.project||'')}${a.project?' · ':''}${ago(a.created_at)}</div>${a.note?`<span style="display:block;font-size:12px;color:var(--muted)">${esc(a.note)}</span>`:''}</div>`).join('')}</div>
+      ${ACTV.length>=actLimit&&actLimit<500?'<button type="button" class="mini" id="rec-more">شوف أكثر</button>':''}`:'<div class="empty" style="padding:12px">ما أكو حركة مسجّلة بالفترة الأخيرة</div>'}`:''}`;
+}
+function revCard(r){
+  const c=r.scores||{}, cr=REV_CRIT.filter(([k])=>c[k]!=null).map(([k,t])=>`<span>${t} ${esc(String(c[k]))}</span>`).join('');
+  const mine=r.reviewer_id===ME.id;
+  return `<div class="rev"><div class="rev-hd"><span class="stars">${recStars(r.score)}</span><b>${(+r.score||0).toFixed(1)}</b><em>${esc(recPeriod(r.period))}${r.reviewer_name?' · '+esc(r.reviewer_name):''}</em></div>
+    ${cr?`<div class="rev-cr">${cr}</div>`:''}
+    ${r.strengths?`<p><i>نقاط القوة</i>${esc(r.strengths)}</p>`:''}${r.improve?`<p><i>يحتاج يتحسّن</i>${esc(r.improve)}</p>`:''}${r.goals?`<p><i>أهداف الفترة الجاية</i>${esc(r.goals)}</p>`:''}
+    ${isStaff()&&(isAdmin()||mine)?`<button type="button" class="rev-del" data-revdel="${r.id}">احذف التقييم</button>`:''}</div>`;
+}
+function bindRecord(){
+  const b=$('#rec-back'); if(b) b.onclick=()=>{ REC.agent=null; render(); appScrollTo(0); };
+  const n=$('#rev-new'); if(n) n.onclick=()=>openReviewNew();
+  document.querySelectorAll('[data-revdel]').forEach(x=>x.onclick=()=>delReview(x.dataset.revdel));
+  document.querySelectorAll('[data-stk]').forEach(x=>x.onclick=()=>openStk(x.dataset.stk));
+  bindLt();
+  const m=$('#rec-more'); if(m) m.onclick=()=>{ actLimit=Math.min(500, actLimit+100); actLoaded=false; loadActivity(); };
+}
+// تقييم جديد: درجات من ١ إلى ٥ على خمس نقاط + نقاط قوة + يحتاج يتحسّن + أهداف
+function openReviewNew(){
+  const id=REC.agent; if(!id) return;
+  const m=today().slice(0,7), d=new Date(m+'-01T12:00:00'); d.setMonth(d.getMonth()-1); const prev=ymd(d).slice(0,7);
+  REC.draft={ agent:id, period:m, periods:[m,prev], scores:{}, strengths:'', improve:'', goals:'' };
+  paintReviewNew(); openedSheet();
+}
+function paintReviewNew(){
+  const d=REC.draft; if(!d) return;
+  const vals=Object.values(d.scores), avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+  $('#sheetin').innerHTML=`${sheetHead('تقييم '+(NAMES[d.agent]||''), 'ينحفظ بسجل الموظف — يشوفه هو والإدارة')}
+    <label>الفترة</label>
+    <div class="opts">${d.periods.map(p=>`<button type="button" class="opt ${d.period===p?'sel':''}" data-rvp="${p}">${esc(recPeriod(p))}</button>`).join('')}</div>
+    <label>الدرجات <small style="color:var(--dim);font-weight:400">— من ١ (ضعيف) إلى ٥ (ممتاز)</small></label>
+    ${REV_CRIT.map(([k,t])=>`<div class="rv-row"><span>${t}</span><div class="opts">${[1,2,3,4,5].map(n=>`<button type="button" class="opt ${d.scores[k]===n?'sel':''}" data-rvs="${k}:${n}">${n}</button>`).join('')}</div></div>`).join('')}
+    <div class="hint">المعدل: <b>${vals.length?avg.toFixed(1):'—'}</b> من ٥</div>
+    <label for="rv-str">نقاط القوة</label><textarea class="field" id="rv-str" maxlength="1000" placeholder="شنو يسوّيه زين">${esc(d.strengths)}</textarea>
+    <label for="rv-imp">يحتاج يتحسّن</label><textarea class="field" id="rv-imp" maxlength="1000" placeholder="وين يحتاج شغل">${esc(d.improve)}</textarea>
+    <label for="rv-goal">أهداف الفترة الجاية</label><textarea class="field" id="rv-goal" maxlength="1000" placeholder="شنو المطلوب منه الشهر الجاي">${esc(d.goals)}</textarea>
+    <button type="button" class="save" id="rv-go" ${vals.length?'':'disabled'}>${vals.length?'احفظ التقييم':'حدّد درجة وحدة على الأقل'}</button>`;
+  const x=$('#xclose'); if(x) x.onclick=()=>{ REC.draft=null; closeSheet(); };
+  bindGrab();
+  const sync=(id,k)=>{ const el=$(id); if(el) el.oninput=()=>{ d[k]=el.value; }; };
+  sync('#rv-str','strengths'); sync('#rv-imp','improve'); sync('#rv-goal','goals');
+  document.querySelectorAll('[data-rvp]').forEach(b=>b.onclick=()=>{ d.period=b.dataset.rvp; paintReviewNew(); });
+  document.querySelectorAll('[data-rvs]').forEach(b=>b.onclick=()=>{ const [k,n]=b.dataset.rvs.split(':'); d.scores[k] = d.scores[k]===+n ? undefined : +n; if(d.scores[k]===undefined) delete d.scores[k]; paintReviewNew(); });
+  const go=$('#rv-go'); if(go) go.onclick=saveReview;
+}
+async function saveReview(){
+  const d=REC.draft; if(!d) return;
+  if(!Object.keys(d.scores).length) return toast('حدّد درجة وحدة على الأقل','bad');
+  const b=$('#rv-go'); b.disabled=true; b.textContent='جاري الحفظ…';
+  const { error } = await sb.rpc('staff_review_add',{ p_agent:d.agent, p_period:d.period, p_scores:d.scores, p_strengths:d.strengths.trim()||null, p_improve:d.improve.trim()||null, p_goals:d.goals.trim()||null });
+  if(error){ b.disabled=false; b.textContent='احفظ التقييم';
+    if(NO_FN(error) || /schema cache|could not find/i.test(error.message||'')) return toast('التقييمات تحتاج ملف ٩٧ بالقاعدة','bad');
+    return toast(clean(error.message),'bad'); }
+  REC.draft=null; closeSheet(); toast('انحفظ التقييم بسجله','gold');
+  REC.loaded=false; recRepaint(); recLoad();
+}
+async function delReview(id){
+  if(!confirm('نحذف هذا التقييم من السجل؟')) return;
+  const { error } = await sb.rpc('staff_review_del',{ p_id:id });
+  if(error) return toast(clean(error.message),'bad');
+  REC.reviews=REC.reviews.filter(r=>r.id!==id); toast('انحذف التقييم'); recRepaint();
+}
+// قائمة الموظفين بتبويب الفريق — كل اسم يفتح سجله
+function recPeopleBox(){
+  const ppl=recPeople().map(a=>({a, S:recStats(a.id)}));
+  return `<div class="sec" style="margin-top:22px"><h2>سجلات الموظفين</h2><em>متابعة وتقييم · اضغط الاسم</em></div>
+  <div class="brk rec-people">${ppl.map(({a,S})=>`<div data-rec="${a.id}">${avHTML(a.full_name, avatarOf(a.id), 30)}
+      <span class="rp-t"><b>${esc(a.full_name)}</b><em>${esc(ROLE_AR[a.role]||'')} · ${S.act} نشط · ${S.dm} صفقة الشهر${S.ltLate+S.stLate?` · <span class="bad">${S.ltLate+S.stLate} مهمة متأخرة</span>`:''}</em></span>
+      <b class="num" title="نقاط الأسبوع">${S.pts==null?'—':plain(S.pts)}</b></div>`).join('')||'<div><span>ما أكو موظفين نشطين</span></div>'}</div>`;
+}
 function viewTeam(){
+  if(REC.agent) return viewRecord();
   const rows = (tgtKind==='monthly' ? TGT_M : TGT_W);
   const agents = TEAM.filter(t=>t.is_active && (t.role==='agent'||t.role==='manager'));
   const untouched = LEADS.filter(isNewUntouched);
@@ -5347,6 +5532,8 @@ function viewTeam(){
     : `<div class="empty">ما أكو موظفين بالتاركت بعد<b></b>
        ${TGT_W.length===0&&TGT_M.length===0?'شغّل ملف القاعدة 27 حتى يشتغل التاركت':'ضيف موظفين نشطين أول'}</div>`}
   ${noTgt?`<div class="hint" style="margin-top:6px">${noTgt} موظف بلا تاركت لهذي الفترة — حدّده حتى يشوف هدفه ويتحاسب عليه.</div>`:''}
+
+  ${recPeopleBox()}
 
   ${sentNotesBox()}
 
@@ -5520,6 +5707,8 @@ function openNoteSheet(agentId){
 }
 
 function bindTeam(){
+  if(REC.agent){ bindRecord(); return; }
+  document.querySelectorAll('[data-rec]').forEach(el=>el.onclick=()=>goRecord(el.dataset.rec));
   const bo=$('#blk-open'); if(bo) bo.onclick=()=>openBulk();
   bindActivity();
   const k=$('#tgt-kind');
@@ -8694,7 +8883,8 @@ function groupSections(tabKey){
     const badgeEl = sec.querySelector('em');
     const badge = badgeEl ? badgeEl.textContent.trim() : '';
     const key = tabKey + ':' + (title || i);
-    const open = Object.prototype.hasOwnProperty.call(ACC_OPEN, key) ? !!ACC_OPEN[key] : (i === 0);
+    // الافتراضي: أول قسم مفتوح — وسجل الموظف كله مفتوح (متابعة) — وقائمة «سجلات الموظفين» مفتوحة
+    const open = Object.prototype.hasOwnProperty.call(ACC_OPEN, key) ? !!ACC_OPEN[key] : (i === 0 || (tabKey==='team' && !!REC.agent) || title==='سجلات الموظفين');
     const wrap = document.createElement('div');
     wrap.className = 'acc' + (open ? ' open' : '');
     wrap.dataset.acc = key;
@@ -8804,6 +8994,7 @@ function navMark(){
   const mb=$('#nav-more'); if(mb) mb.classList.toggle('on', !!e && e.more);
 }
 function navGo(k){
+  if(k==='team') REC.agent=null;     // من الشريط: لوحة الفريق، مو آخر سجل مفتوح
   tab=k; closeNavMore(); navMark();
   render(); appScrollTo(0); navFit();
 }
@@ -10627,7 +10818,44 @@ async function notifGo(n){
 /* ═══════════ المهام بين الموظفين (ملف ٦٧) ═══════════
    أي موظف يضيف مهمة لنفسه أو لزميله ← الزميل يقبل أو يرفض بالسبب ← يشتغل ويسلّم بالنتيجة
    ← اللي أرسلها يلغي أو يرجّعها ← الإدارة تتابع كل خطوة بسجل زمني. */
-let STK={ list:[], team:[], people:[], loaded:false, on:true, busy:false, err:'' }, stkF='mine', stkDraft=null;
+let STK={ list:[], team:[], people:[], ldone:[], loaded:false, on:true, busy:false, err:'', fInit:false }, stkF='mine', stkDraft=null;
+// لوحة مهام الفريق: الموظفون المفتوحة بطاقاتهم
+const TGOPEN=new Set();
+// سجل الموظف (متابعة وتقييم)
+let REC={ agent:null, reviews:[], loaded:false, busy:false, on:true, err:'', prof:null, draft:null };
+const REV_CRIT=[['commit','الالتزام والدوام'],['followup','متابعة العملاء'],['comm','التواصل والأسلوب'],['close','الإغلاق والصفقات'],['team','التعاون مع الفريق']];
+const REC_MON=['كانون الثاني','شباط','آذار','نيسان','أيار','حزيران','تموز','آب','أيلول','تشرين الأول','تشرين الثاني','كانون الأول'];
+const recPeriod = p => { const m=String(p||'').match(/^(\d{4})-(\d{2})$/); return m ? REC_MON[+m[2]-1]+' '+m[1] : (p||''); };
+const recStars = n => { const k=Math.max(0,Math.min(5,Math.round(+n||0))); return '★'.repeat(k)+'☆'.repeat(5-k); };
+// الموظفون اللي إلهم مهام وسجل: كل نشط غير الشركاء والحسابات العادية
+const recPeople = () => TEAM.filter(p=>p.is_active!==false && ['agent','manager','supervisor','callcenter'].includes(p.role));
+const ltLate = t => !!(t.due_at && !t.completed_at && new Date(t.due_at) < new Date());
+// أرقام الموظف من البيانات المحمّلة أصلاً — بلا طلب جديد
+function recStats(id){
+  const ls=LEADS.filter(l=>l.owner_id===id), act=ls.filter(l=>ACTIVE.includes(l.stage));
+  const late=act.filter(overdue).length, stale=act.filter(isStale).length, won=ls.filter(l=>l.stage==='won').length;
+  const m0=today().slice(0,7);
+  const ds=DEALS.filter(d=>(d.agent_id===id||d.co_agent_id===id) && d.status!=='cancelled');
+  const dm=ds.filter(d=>String(d.signed_at||d.created_at||'').slice(0,7)===m0);
+  const sales=dm.reduce((t,d)=>t+(+d.sale_value||0),0);
+  const lt=TASKS.filter(t=>t.agent_id===id && !t.completed_at).sort((a,b)=>String(a.due_at||'9').localeCompare(String(b.due_at||'9')));
+  const ltLateN=lt.filter(ltLate).length, ldone=(STK.ldone||[]).filter(t=>t.agent_id===id).length;
+  const st=STK.team.filter(t=>t.to_user===id), stAct=st.filter(t=>['pending','accepted'].includes(t.status));
+  const stLate=stAct.filter(stkLate).length, stDone=st.filter(t=>t.status==='done').length;
+  const li=LEADERBOARD.findIndex(r=>r.agent_id===id), lb=li>=0?LEADERBOARD[li]:null;
+  const tw=TGT_W.find(r=>r.agent_id===id), tm=TGT_M.find(r=>r.agent_id===id);
+  let notes=0; try{ notes=coachItems().filter(x=>x.owner_id===id && !x.acted).length; }catch(e){}
+  return { ls, act:act.length, late, stale, won, conv: ls.length?Math.round(won/ls.length*100):null, dm:dm.length, dall:ds.length, sales,
+           lt, ltLate:ltLateN, ldone, st, stAct, stLate, stDone, pts: lb?+lb.total_points||0:null, rank: li>=0?li+1:null, tw, tm, notes };
+}
+// بطاقة مهمة عميل (من تكليف الإدارة أو ملاحظات المساعد) — الضغط يفتح ملف العميل
+function ltCard(t){
+  const l=LEADS.find(x=>x.id===t.lead_id), late=ltLate(t);
+  return `<button type="button" class="lt ${late?'late':''}" data-ltopen="${t.lead_id||''}"><span class="lt-ic" aria-hidden="true">${late?'⚠':'☎'}</span>
+    <span><b>${esc(l?l.full_name:'عميل')}</b><em>${esc(t.title||'متابعة')}${t.due_at?` · ${late?'فات ':''}${esc(stkWhen(t.due_at))}`:''}${l&&l.projects?` · ${esc(l.projects.name||'')}`:''}</em></span></button>`;
+}
+function bindLt(){ document.querySelectorAll('[data-ltopen]').forEach(x=>x.onclick=()=>{ if(x.dataset.ltopen) openSheet(x.dataset.ltopen); }); }
+
 const STK_PRI=[['low','عادية جداً'],['normal','عادية'],['high','مهمة'],['urgent','مستعجلة']];
 const STK_ST={ pending:'تنتظر قبول', accepted:'شغّالة', rejected:'مرفوضة', done:'خلصت', cancelled:'ملغية' };
 const STK_EV={ create:'أرسلها', accept:'قبلها', reject:'رفضها', done:'خلّصها', cancel:'ألغاها', reopen:'رجّعها', comment:'علّق' };
@@ -10640,7 +10868,11 @@ async function loadStk(){
   STK.busy=false; STK.loaded=true;
   if(r.error){ STK.on=!/task_list|schema cache|could not find|does not exist/i.test(r.error.message); STK.err=STK.on?clean(r.error.message):''; STK.list=[]; }
   else { STK.on=true; STK.err=''; STK.list=Array.isArray(r.data)?r.data:[]; }
-  if(isStaff()){ const t=await sb.rpc('task_list',{ p_all:true }); STK.team = (!t.error && Array.isArray(t.data)) ? t.data : []; }
+  if(isStaff()){ const t=await sb.rpc('task_list',{ p_all:true }); STK.team = (!t.error && Array.isArray(t.data)) ? t.data : [];
+    // مهام العملاء اللي خلصت بآخر ٣٠ يوم — حتى نعرف منو ينجز (TASKS العامة فيها المفتوحة بس)
+    const since=new Date(Date.now()-30*864e5).toISOString();
+    const ld=await sb.from('tasks').select('id, lead_id, agent_id, title, due_at, completed_at').not('completed_at','is',null).gte('completed_at', since).limit(1000);
+    STK.ldone = ld.error ? [] : (ld.data||[]); }
   paintStkPill();
   if((tab==='tasks'||tab==='inbox') && !sheetOpen) render();
   if(tab==='wallet' && !sheetOpen){ const box=$('#stk-mini'); if(box) box.outerHTML=stkMini(); bindStkMini(); }
@@ -10666,22 +10898,53 @@ function stkCard(t, opt={}){
     <span class="stk-st">${esc(STK_ST[t.status]||t.status)}</span></button>
     ${opt.quick && inc && t.status==='pending'?`<div class="stk-q"><button type="button" class="mini gd" data-stkok="${t.id}">✓ اقبل</button><button type="button" class="mini" data-stkno="${t.id}">✕ ارفض</button></div>`:''}`;
 }
+// لوحة مهام الفريق: كل موظف وبطاقته — مهام عملائه (تكليف الإدارة · ملاحظات المساعد) ومهام الفريق اللي عليه
+function tmRow(p){
+  const S=recStats(p.id), open=TGOPEN.has(p.id), lateN=S.ltLate+S.stLate, total=S.lt.length+S.stAct.length;
+  const parts=[`${S.lt.length} مهمة عميل`, `${S.stAct.length} مهمة فريق`]; if(S.ldone||S.stDone) parts.push(`${S.ldone+S.stDone} خلصت بالشهر`);
+  return `<div class="tg-row ${open?'open':''}" data-tgrow="${p.id}">
+    <button type="button" class="tg-hd" data-tgo="${p.id}" aria-expanded="${open}">
+      ${avHTML(p.full_name, avatarOf(p.id), 34)}
+      <span class="tg-t"><b>${esc(p.full_name)}</b><em>${esc(ROLE_AR[p.role]||'')} · ${parts.join(' · ')}</em></span>
+      <span class="tg-n">${lateN?`<i class="bad" title="فات موعدها">${lateN} ⚠</i>`:''}<i class="${total?'':'ok'}">${total||'✓'}</i><span class="chev">‹</span></span>
+    </button>
+    ${open?`<div class="tg-bd">
+      <div class="tg-act"><button type="button" class="pri" data-tgnew="${p.id}">+ مهمة إله</button><button type="button" data-tgrec="${p.id}">📋 سجله</button></div>
+      ${S.lt.length?`<div class="sec"><h2>مهام عملائه</h2><em>${S.lt.length}${S.ltLate?` · ${S.ltLate} متأخرة`:''}</em></div>${S.lt.slice(0,12).map(ltCard).join('')}${S.lt.length>12?`<div class="hint">و${S.lt.length-12} مهمة ثانية بسجله</div>`:''}`:''}
+      ${S.stAct.length?`<div class="sec" style="margin-top:${S.lt.length?12:0}px"><h2>مهام الفريق عليه</h2><em>${S.stAct.length}</em></div>${S.stAct.map(t=>stkCard(t,{team:true})).join('')}`:''}
+      ${!total?`<div class="empty" style="padding:12px">ما عنده مهام مفتوحة${S.notes?` — بس عنده ${S.notes} ملاحظة من المساعد تحتاج حركة`:''}</div>`:''}
+    </div>`:''}
+  </div>`;
+}
+function tmBoard(){
+  const T=STK.team, act=T.filter(t=>['pending','accepted'].includes(t.status)), late=act.filter(stkLate);
+  const ltOpen=TASKS.filter(t=>!t.completed_at), ltLateN=ltOpen.filter(ltLate).length;
+  const hasTask=new Set(ltOpen.map(t=>t.lead_id));
+  let bulkN=0; try{ bulkN=coachItems().filter(x=>!x.acted && x.owner_id && !hasTask.has(x.lead_id)).length; }catch(e){}
+  // الموظفون بالترتيب: المتأخر أول، بعدين الأكثر مهام
+  const ppl=recPeople().map(p=>({p, S:recStats(p.id)})).sort((a,b)=>(b.S.ltLate+b.S.stLate)-(a.S.ltLate+a.S.stLate) || (b.S.lt.length+b.S.stAct.length)-(a.S.lt.length+a.S.stAct.length) || String(a.p.full_name).localeCompare(String(b.p.full_name),'ar'));
+  return `<div class="kpis" style="margin-bottom:12px">
+      <div class="kpi"><i>مهام عملاء مفتوحة</i><b class="num">${ltOpen.length}</b><s>${(STK.ldone||[]).length} خلصت بآخر ٣٠ يوم</s></div>
+      <div class="kpi ${ltLateN+late.length?'warn':''}"><i>فات موعدها</i><b class="num">${ltLateN+late.length}</b><s>${ltLateN} عملاء · ${late.length} فريق</s></div>
+      <div class="kpi"><i>مهام فريق شغّالة</i><b class="num">${act.filter(t=>t.status==='accepted').length}</b><s>${T.filter(t=>t.status==='pending').length} تنتظر قبول</s></div>
+      <div class="kpi"><i>خلصت</i><b class="num">${T.filter(t=>t.status==='done').length}</b><s>آخر ٤٥ يوم · ${T.filter(t=>t.status==='rejected').length} مرفوضة</s></div></div>
+    <div class="tg-act" style="margin:0 0 14px"><button type="button" class="pri" id="tg-new">+ مهمة لزميل</button>
+      <button type="button" id="tg-bulk" ${bulkN?'':'disabled'} title="كل ملاحظة مفتوحة من المساعد تصير مهمة لصاحب العميل">مهام من ملاحظات المساعد${bulkN?` (${bulkN})`:''}</button></div>
+    <div class="sec"><h2>كل موظف ومهامه</h2><em>${ppl.length} موظف · اضغط الاسم</em></div>
+    ${ppl.length?ppl.map(x=>tmRow(x.p)).join(''):'<div class="empty">ما أكو موظفين نشطين</div>'}`;
+}
 function viewTasks(){
   if(!STK.loaded){ loadStk(); return `<div class="spin">جاري التحميل…</div>`; }
   if(!STK.on) return `<div class="gate"><b>المهام تحتاج تحديث القاعدة.</b> شغّل ملف ٦٧ بـSupabase وارجع.</div>`;
+  if(!STK.fInit){ STK.fInit=true; if(isStaff()) stkF='team'; }   // الإدارة تفتح على مهام الفريق أول
   const L=STK.list, inc=stkMineIn(), work=L.filter(t=>t.to_user===ME.id && t.status==='accepted'),
     sent=L.filter(t=>t.from_user===ME.id && t.to_user!==ME.id && ['pending','accepted','rejected'].includes(t.status)),
     closed=L.filter(t=>['done','cancelled'].includes(t.status) || (t.status==='rejected' && t.to_user===ME.id));
   const chip=(k,t,n)=>`<button type="button" data-stkf="${k}" class="${stkF===k?'on':''}">${t}${n!=null?`<span class="n">${n}</span>`:''}</button>`;
+  const myLt=TASKS.filter(t=>t.agent_id===ME.id && !t.completed_at).sort((a,b)=>String(a.due_at||'9').localeCompare(String(b.due_at||'9')));
   let body='';
-  if(stkF==='team'){
-    const T=STK.team, act=T.filter(t=>['pending','accepted'].includes(t.status)), late=act.filter(stkLate);
-    body=`<div class="kpis" style="margin-bottom:12px">
-        <div class="kpi"><i>شغّالة</i><b class="num">${act.filter(t=>t.status==='accepted').length}</b><s>مقبولة</s></div>
-        <div class="kpi ${T.filter(t=>t.status==='pending').length?'warn':''}"><i>تنتظر قبول</i><b class="num">${T.filter(t=>t.status==='pending').length}</b><s>ما ردّوا بعد</s></div>
-        <div class="kpi ${late.length?'warn':''}"><i>فات موعدها</i><b class="num">${late.length}</b><s>بعدها ما خالصة</s></div>
-        <div class="kpi"><i>خلصت</i><b class="num">${T.filter(t=>t.status==='done').length}</b><s>آخر ٤٥ يوم · ${T.filter(t=>t.status==='rejected').length} مرفوضة</s></div></div>
-      ${T.length?T.map(t=>stkCard(t,{team:true})).join(''):'<div class="empty">ما أكو مهام بالفريق بعد</div>'}`;
+  if(stkF==='team' && isStaff()){
+    body=tmBoard();
   } else if(stkF==='sent'){
     body = sent.length ? sent.map(t=>stkCard(t)).join('') : '<div class="empty">ما أرسلت مهام شغّالة</div>';
   } else if(stkF==='closed'){
@@ -10689,18 +10952,27 @@ function viewTasks(){
   } else {
     body = `${inc.length?`<div class="sec"><h2>تنتظر قرارك</h2><em>${inc.length}</em></div>${inc.map(t=>stkCard(t,{quick:true})).join('')}`:''}
       <div class="sec" style="margin-top:${inc.length?16:0}px"><h2>شغلي</h2><em>${work.length}</em></div>
-      ${work.length?work.map(t=>stkCard(t)).join(''):'<div class="empty" style="padding:14px">ما عندك مهام شغّالة — ضيف مهمة لنفسك أو انتظر زملائك</div>'}`;
+      ${work.length?work.map(t=>stkCard(t)).join(''):'<div class="empty" style="padding:14px">ما عندك مهام شغّالة — ضيف مهمة لنفسك أو انتظر زملائك</div>'}
+      ${myLt.length?`<div class="sec" style="margin-top:16px"><h2>مهام عملائي</h2><em>${myLt.length}${myLt.filter(ltLate).length?` · ${myLt.filter(ltLate).length} متأخرة`:''}</em></div>
+        <div class="hint" style="margin:0 0 8px">كلّفتك بيها الإدارة أو طلعت من ملاحظات المساعد — اضغط العميل وسجّل الحركة</div>${myLt.map(ltCard).join('')}`:''}`;
   }
   return `<div class="stk-top"><div><h2 class="com-h">المهام</h2><span class="com-sub">إلك ولزملائك · قبول ورفض · متابعة كل خطوة</span></div>
       <button type="button" class="save stk-add" id="stk-new">+ مهمة جديدة</button></div>
     <div class="filters" id="stk-f" style="margin:10px 0 12px">
-      ${chip('mine','إلي',inc.length+work.length)}${chip('sent','أرسلتها',sent.length)}${chip('closed','الخالصة',null)}
-      ${isStaff()?chip('team','متابعة الفريق',STK.team.filter(t=>['pending','accepted'].includes(t.status)).length):''}</div>
+      ${isStaff()?chip('team','مهام الفريق',STK.team.filter(t=>['pending','accepted'].includes(t.status)).length+TASKS.filter(t=>!t.completed_at).length):''}
+      ${chip('mine','إلي',inc.length+work.length+myLt.length)}${chip('sent','أرسلتها',sent.length)}${chip('closed','الخالصة',null)}</div>
     ${STK.err?`<div class="fit miss"><i>ما انقرت المهام</i><span class="line">${esc(STK.err)}</span></div>`:''}
     ${body}`;
 }
 function bindStkList(){
   const n=$('#stk-new'); if(n) n.onclick=()=>openStkNew();
+  // لوحة مهام الفريق
+  const tn=$('#tg-new'); if(tn) tn.onclick=()=>openStkNew();
+  const tb=$('#tg-bulk'); if(tb) tb.onclick=()=>coachBulk();
+  document.querySelectorAll('[data-tgo]').forEach(b=>b.onclick=()=>{ const id=b.dataset.tgo; if(TGOPEN.has(id)) TGOPEN.delete(id); else TGOPEN.add(id); render(); });
+  document.querySelectorAll('[data-tgnew]').forEach(b=>b.onclick=()=>openStkNew(b.dataset.tgnew));
+  document.querySelectorAll('[data-tgrec]').forEach(b=>b.onclick=()=>goRecord(b.dataset.tgrec));
+  bindLt();
   const f=$('#stk-f'); if(f) f.onclick=e=>{ const b=e.target.closest('[data-stkf]'); if(!b) return; stkF=b.dataset.stkf; render(); };
   document.querySelectorAll('[data-stk]').forEach(b=>b.onclick=()=>openStk(b.dataset.stk));
   document.querySelectorAll('[data-stkok]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); stkAct(b.dataset.stkok,'accept'); });
@@ -10713,11 +10985,12 @@ function stkMini(){
   const top=[...inc, ...late, ...work.filter(t=>!stkLate(t))].slice(0,3);
   return `<div id="stk-mini"><div class="sec" style="margin-top:22px"><h2>مهامي</h2><em>${inc.length?inc.length+' تنتظر قرارك':work.length}</em></div>
     ${top.length?top.map(t=>stkCard(t,{quick:true})).join(''):'<div class="empty" style="padding:12px">ما عندك مهام هسه</div>'}
-    <div class="quick" style="margin-top:8px"><button type="button" class="pri" id="stk-mnew">+ مهمة</button><button type="button" id="stk-mall">كل المهام</button></div></div>`;
+    <div class="quick" style="margin-top:8px"><button type="button" class="pri" id="stk-mnew">+ مهمة</button><button type="button" id="stk-mall">كل المهام</button><button type="button" id="stk-rec">📋 سجلي</button></div></div>`;
 }
 function bindStkMini(){
   const a=$('#stk-mnew'); if(a) a.onclick=()=>openStkNew();
   const b=$('#stk-mall'); if(b) b.onclick=()=>{ tab='tasks'; buildNav(); render(); appScrollTo(0); };
+  const rc=$('#stk-rec'); if(rc) rc.onclick=()=>{ REC={ ...REC, agent:ME.id, reviews:[], loaded:false, err:'', prof:null, draft:null }; openRecordSheet(ME.id); recLoad(); };
   document.querySelectorAll('#stk-mini [data-stk]').forEach(x=>x.onclick=()=>openStk(x.dataset.stk));
   document.querySelectorAll('#stk-mini [data-stkok]').forEach(x=>x.onclick=()=>stkAct(x.dataset.stkok,'accept'));
   document.querySelectorAll('#stk-mini [data-stkno]').forEach(x=>x.onclick=()=>stkAct(x.dataset.stkno,'reject'));
@@ -11586,10 +11859,8 @@ function paintProfile(){
   $('#sheetin').innerHTML=`
   ${sheetHead(p.full_name, (p.handle?'@'+p.handle+' · ':'')+(ROLE_AR[p.role]||p.role))}
   ${profileHero(p)}
-  ${!p.is_me ? (p.can_message
-    ? `<div class="quick" style="margin:12px 0 4px"><button id="pf-msg" class="pri">✉ راسله</button></div>`
-    : `<div class="hint" style="text-align:center;margin:10px 0 4px">
-         الرسائل داخل المشروع — تشوف صفحته بس ما تراسله</div>`) : ''}
+  ${!p.is_me ? `${(p.can_message||isStaff())?`<div class="quick" style="margin:12px 0 4px">${p.can_message?`<button id="pf-msg" class="pri">✉ راسله</button>`:''}${isStaff()?`<button id="pf-rec">📋 السجل</button>`:''}</div>`:''}${p.can_message?'':`<div class="hint" style="text-align:center;margin:${isStaff()?'0':'10px'} 0 4px">
+         الرسائل داخل المشروع — تشوف صفحته بس ما تراسله</div>`}` : ''}
   ${profileStatus(p)}
   ${profileTiles(p)}
   ${p.joined_at?`<div class="hint" style="text-align:center;margin-top:10px">
@@ -11612,6 +11883,7 @@ function bindProfile(){
   const inp=$('#stx'); if(inp) inp.onkeydown=ev=>{
     if(ev.key==='Enter'){ ev.preventDefault(); saveStatus(inp.value); }
     if(ev.key==='Escape'){ statusEdit=false; rp(); } };
+  const rc=$('#pf-rec'); if(rc) rc.onclick=()=>goRecord(PROFILE.id);
   const m=$('#pf-msg');
   if(m) m.onclick=async()=>{
     const id=PROFILE.id; closeSheet();
